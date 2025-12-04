@@ -33,9 +33,9 @@ func TestGetAllExpeditions(t *testing.T) {
 		cityID1 := uuid.New()
 		cityID2 := uuid.New()
 
-		expeditionRows := sqlmock.NewRows([]string{"id", "name", "address", "city_id", "area", "phone1", "phone2", "email", "website", "created_at", "updated_at"}).
-			AddRow(expeditionID1, "JNE", "Jl. Test 1", cityID1, "Area 1", "021-111", "021-112", "jne@example.com", "www.jne.com", time.Now(), time.Now()).
-			AddRow(expeditionID2, "TIKI", "Jl. Test 2", cityID2, "Area 2", "021-222", nil, nil, nil, time.Now(), time.Now())
+		expeditionRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "address", "city_id", "area", "phone1", "phone2", "email", "website", "created_at", "updated_at"}).
+			AddRow(expeditionID1, "EXP001", "JNE", "Test Description", "Jl. Test 1", cityID1, "Area 1", "021-111", "021-112", "jne@example.com", "www.jne.com", time.Now(), time.Now()).
+			AddRow(expeditionID2, "EXP002", "TIKI", nil, "Jl. Test 2", cityID2, "Area 2", "021-222", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "expeditions" ORDER BY created_at DESC`)).
 			WillReturnRows(expeditionRows)
@@ -73,8 +73,8 @@ func TestGetExpedition(t *testing.T) {
 		expeditionID := uuid.New()
 		cityID := uuid.New()
 
-		expeditionRows := sqlmock.NewRows([]string{"id", "name", "address", "city_id", "area", "phone1", "phone2", "email", "website", "created_at", "updated_at"}).
-			AddRow(expeditionID, "JNE", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, time.Now(), time.Now())
+		expeditionRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "address", "city_id", "area", "phone1", "phone2", "email", "website", "created_at", "updated_at"}).
+			AddRow(expeditionID, "EXP001", "JNE", "Test Description", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "expeditions" WHERE id = $1`)).
 			WithArgs(expeditionID.String()).
@@ -181,8 +181,8 @@ func TestUpdateExpedition(t *testing.T) {
 		expeditionID := uuid.New()
 		cityID := uuid.New()
 
-		expeditionRows := sqlmock.NewRows([]string{"id", "name", "address", "city_id", "area", "phone1", "phone2", "email", "website", "created_at", "updated_at"}).
-			AddRow(expeditionID, "JNE", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, time.Now(), time.Now())
+		expeditionRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "address", "city_id", "area", "phone1", "phone2", "email", "website", "created_at", "updated_at"}).
+			AddRow(expeditionID, "EXP001", "JNE", "Test Description", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "expeditions" WHERE id = $1`)).
 			WithArgs(expeditionID.String()).

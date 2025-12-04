@@ -31,9 +31,9 @@ func TestGetAllBidangStudi(t *testing.T) {
 		bidangStudiID1 := uuid.New()
 		bidangStudiID2 := uuid.New()
 
-		rows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(bidangStudiID1, "Mathematics", time.Now(), time.Now()).
-			AddRow(bidangStudiID2, "Science", time.Now(), time.Now())
+		rows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(bidangStudiID1, "BS001", "Mathematics", "Test Description", time.Now(), time.Now()).
+			AddRow(bidangStudiID2, "BS002", "Science", "Test Description", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "bidang_studi" ORDER BY created_at DESC`)).
 			WillReturnRows(rows)
@@ -62,8 +62,8 @@ func TestGetBidangStudi(t *testing.T) {
 
 		bidangStudiID := uuid.New()
 
-		rows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(bidangStudiID, "Mathematics", time.Now(), time.Now())
+		rows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(bidangStudiID, "BS001", "Mathematics", "Test Description", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "bidang_studi" WHERE id = $1`)).
 			WithArgs(bidangStudiID.String()).
@@ -158,8 +158,8 @@ func TestUpdateBidangStudi(t *testing.T) {
 
 		bidangStudiID := uuid.New()
 
-		rows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(bidangStudiID, "Mathematics", time.Now(), time.Now())
+		rows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(bidangStudiID, "BS001", "Mathematics", "Test Description", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "bidang_studi" WHERE id = $1`)).
 			WithArgs(bidangStudiID.String()).

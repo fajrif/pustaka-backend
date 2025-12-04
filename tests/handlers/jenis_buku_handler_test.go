@@ -31,9 +31,9 @@ func TestGetAllJenisBuku(t *testing.T) {
 		jenisBukuID1 := uuid.New()
 		jenisBukuID2 := uuid.New()
 
-		jenisBukuRows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(jenisBukuID1, "Textbook", time.Now(), time.Now()).
-			AddRow(jenisBukuID2, "Novel", time.Now(), time.Now())
+		jenisBukuRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(jenisBukuID1, "JB001", "Textbook", "Test Description", time.Now(), time.Now()).
+			AddRow(jenisBukuID2, "JB002", "Novel", "Test Description", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenis_buku" ORDER BY created_at DESC`)).
 			WillReturnRows(jenisBukuRows)
@@ -62,8 +62,8 @@ func TestGetJenisBuku(t *testing.T) {
 
 		jenisBukuID := uuid.New()
 
-		jenisBukuRows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(jenisBukuID, "Textbook", time.Now(), time.Now())
+		jenisBukuRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(jenisBukuID, "JB001", "Textbook", "Test Description", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenis_buku" WHERE id = $1`)).
 			WithArgs(jenisBukuID.String()).
@@ -158,8 +158,8 @@ func TestUpdateJenisBuku(t *testing.T) {
 
 		jenisBukuID := uuid.New()
 
-		jenisBukuRows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(jenisBukuID, "Textbook", time.Now(), time.Now())
+		jenisBukuRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(jenisBukuID, "JB001", "Textbook", "Test Description", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenis_buku" WHERE id = $1`)).
 			WithArgs(jenisBukuID.String()).

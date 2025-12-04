@@ -44,6 +44,13 @@ func CreateJenjangStudi(c *fiber.Ctx) error {
 		})
 	}
 
+	// Validate period field - only 'S' or 'T' allowed
+	if jenjangStudi.Period != "" && jenjangStudi.Period != "S" && jenjangStudi.Period != "T" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Period must be either 'S' or 'T'",
+		})
+	}
+
 	if err := config.DB.Create(&jenjangStudi).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create jenjang studi",
@@ -66,6 +73,13 @@ func UpdateJenjangStudi(c *fiber.Ctx) error {
 	if err := c.BodyParser(&jenjangStudi); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
+		})
+	}
+
+	// Validate period field - only 'S' or 'T' allowed
+	if jenjangStudi.Period != "" && jenjangStudi.Period != "S" && jenjangStudi.Period != "T" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Period must be either 'S' or 'T'",
 		})
 	}
 

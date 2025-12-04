@@ -35,9 +35,9 @@ func TestGetAllSalesAssociates(t *testing.T) {
 		joinDate := time.Now()
 		discount := 10.5
 
-		salesAssociateRows := sqlmock.NewRows([]string{"id", "name", "address", "city_id", "area", "phone1", "phone2", "email", "website", "jenis_pembayaran", "join_date", "end_join_date", "discount", "created_at", "updated_at"}).
-			AddRow(salesAssociateID1, "PT Distributor A", "Jl. Test 1", cityID1, "Area 1", "021-111", "021-112", "distributora@example.com", "www.distributora.com", "T", joinDate, nil, discount, time.Now(), time.Now()).
-			AddRow(salesAssociateID2, "PT Distributor B", "Jl. Test 2", cityID2, "Area 2", "021-222", nil, nil, nil, "T", joinDate, nil, discount, time.Now(), time.Now())
+		salesAssociateRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "address", "city_id", "area", "phone1", "phone2", "email", "website", "jenis_pembayaran", "join_date", "end_join_date", "discount", "created_at", "updated_at"}).
+			AddRow(salesAssociateID1, "SA001", "PT Distributor A", "Test Description", "Jl. Test 1", cityID1, "Area 1", "021-111", "021-112", "distributora@example.com", "www.distributora.com", "T", joinDate, nil, discount, time.Now(), time.Now()).
+			AddRow(salesAssociateID2, "SA002", "PT Distributor B", nil, "Jl. Test 2", cityID2, "Area 2", "021-222", nil, nil, nil, "T", joinDate, nil, discount, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_associates" ORDER BY created_at DESC`)).
 			WillReturnRows(salesAssociateRows)
@@ -77,8 +77,8 @@ func TestGetSalesAssociate(t *testing.T) {
 		joinDate := time.Now()
 		discount := 10.5
 
-		salesAssociateRows := sqlmock.NewRows([]string{"id", "name", "address", "city_id", "area", "phone1", "phone2", "email", "website", "jenis_pembayaran", "join_date", "end_join_date", "discount", "created_at", "updated_at"}).
-			AddRow(salesAssociateID, "PT Distributor A", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, "T", joinDate, nil, discount, time.Now(), time.Now())
+		salesAssociateRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "address", "city_id", "area", "phone1", "phone2", "email", "website", "jenis_pembayaran", "join_date", "end_join_date", "discount", "created_at", "updated_at"}).
+			AddRow(salesAssociateID, "SA001", "PT Distributor A", "Test Description", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, "T", joinDate, nil, discount, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_associates" WHERE id = $1`)).
 			WithArgs(salesAssociateID.String()).
@@ -195,8 +195,8 @@ func TestUpdateSalesAssociate(t *testing.T) {
 		discount := 10.5
 		jenisPembayaran := "T"
 
-		salesAssociateRows := sqlmock.NewRows([]string{"id", "name", "address", "city_id", "area", "phone1", "phone2", "email", "website", "jenis_pembayaran", "join_date", "end_join_date", "discount", "created_at", "updated_at"}).
-			AddRow(salesAssociateID, "PT Distributor A", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, "T", joinDate, nil, discount, time.Now(), time.Now())
+		salesAssociateRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "address", "city_id", "area", "phone1", "phone2", "email", "website", "jenis_pembayaran", "join_date", "end_join_date", "discount", "created_at", "updated_at"}).
+			AddRow(salesAssociateID, "SA001", "PT Distributor A", "Test Description", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, "T", joinDate, nil, discount, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_associates" WHERE id = $1`)).
 			WithArgs(salesAssociateID.String()).

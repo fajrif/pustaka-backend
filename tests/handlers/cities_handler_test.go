@@ -31,9 +31,9 @@ func TestGetAllCities(t *testing.T) {
 		cityID1 := uuid.New()
 		cityID2 := uuid.New()
 
-		cityRows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(cityID1, "Jakarta", time.Now(), time.Now()).
-			AddRow(cityID2, "Bandung", time.Now(), time.Now())
+		cityRows := sqlmock.NewRows([]string{"id", "code", "name", "created_at", "updated_at"}).
+			AddRow(cityID1, "JKT", "Jakarta", time.Now(), time.Now()).
+			AddRow(cityID2, "BDG", "Bandung", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" ORDER BY created_at DESC`)).
 			WillReturnRows(cityRows)
@@ -55,7 +55,7 @@ func TestGetAllCities(t *testing.T) {
 		assert.NoError(t, err)
 		defer testutil.CloseMockDB(db2)
 
-		cityRows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"})
+		cityRows := sqlmock.NewRows([]string{"id", "code", "name", "created_at", "updated_at"})
 
 		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" ORDER BY created_at DESC`)).
 			WillReturnRows(cityRows)
@@ -84,8 +84,8 @@ func TestGetCity(t *testing.T) {
 
 		cityID := uuid.New()
 
-		cityRows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(cityID, "Jakarta", time.Now(), time.Now())
+		cityRows := sqlmock.NewRows([]string{"id", "code", "name", "created_at", "updated_at"}).
+			AddRow(cityID, "JKT", "Jakarta", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE id = $1`)).
 			WithArgs(cityID.String()).
@@ -137,6 +137,7 @@ func TestCreateCity(t *testing.T) {
 		defer testutil.CloseMockDB(db)
 
 		reqBody := models.City{
+			Code: "JKT",
 			Name: "Jakarta",
 		}
 
@@ -180,8 +181,8 @@ func TestUpdateCity(t *testing.T) {
 
 		cityID := uuid.New()
 
-		cityRows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(cityID, "Jakarta", time.Now(), time.Now())
+		cityRows := sqlmock.NewRows([]string{"id", "code", "name", "created_at", "updated_at"}).
+			AddRow(cityID, "JKT", "Jakarta", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE id = $1`)).
 			WithArgs(cityID.String()).
@@ -194,6 +195,7 @@ func TestUpdateCity(t *testing.T) {
 
 		reqBody := models.City{
 			ID:   cityID,
+			Code: "BDG",
 			Name: "Bandung",
 		}
 
@@ -217,6 +219,7 @@ func TestUpdateCity(t *testing.T) {
 			WillReturnError(gorm.ErrRecordNotFound)
 
 		reqBody := models.City{
+			Code: "BDG",
 			Name: "Bandung",
 		}
 
@@ -241,8 +244,8 @@ func TestUpdateCity(t *testing.T) {
 
 		cityID := uuid.New()
 
-		cityRows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(cityID, "Jakarta", time.Now(), time.Now())
+		cityRows := sqlmock.NewRows([]string{"id", "code", "name", "created_at", "updated_at"}).
+			AddRow(cityID, "JKT", "Jakarta", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE id = $1`)).
 			WithArgs(cityID.String()).

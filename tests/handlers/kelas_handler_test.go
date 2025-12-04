@@ -31,9 +31,9 @@ func TestGetAllKelas(t *testing.T) {
 		kelasID1 := uuid.New()
 		kelasID2 := uuid.New()
 
-		rows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(kelasID1, "Class 1", time.Now(), time.Now()).
-			AddRow(kelasID2, "Class 2", time.Now(), time.Now())
+		rows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(kelasID1, "K001", "Class 1", "Test Description", time.Now(), time.Now()).
+			AddRow(kelasID2, "K002", "Class 2", "Test Description", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "kelas" ORDER BY created_at DESC`)).
 			WillReturnRows(rows)
@@ -62,8 +62,8 @@ func TestGetKelas(t *testing.T) {
 
 		kelasID := uuid.New()
 
-		rows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(kelasID, "Class 1", time.Now(), time.Now())
+		rows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(kelasID, "K001", "Class 1", "Test Description", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "kelas" WHERE id = $1`)).
 			WithArgs(kelasID.String()).
@@ -158,8 +158,8 @@ func TestUpdateKelas(t *testing.T) {
 
 		kelasID := uuid.New()
 
-		rows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(kelasID, "Class 1", time.Now(), time.Now())
+		rows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(kelasID, "K001", "Class 1", "Test Description", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "kelas" WHERE id = $1`)).
 			WithArgs(kelasID.String()).

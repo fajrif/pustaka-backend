@@ -8,6 +8,8 @@ import (
 type Book struct {
 	ID             uuid.UUID     `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	Name           string        `gorm:"not null" json:"name"`
+	Description    *string       `json:"description"`
+	Year           string        `gorm:"not null" json:"year"`
 	JenisBukuID    *uuid.UUID    `gorm:"type:uuid" json:"jenis_buku_id"`
 	JenisBuku      *JenisBuku    `gorm:"foreignKey:JenisBukuID" json:"jenis_buku,omitempty"`
 	JenjangStudiID *uuid.UUID    `gorm:"type:uuid" json:"jenjang_studi_id"`

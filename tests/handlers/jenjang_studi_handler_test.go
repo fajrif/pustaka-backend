@@ -31,9 +31,9 @@ func TestGetAllJenjangStudi(t *testing.T) {
 		jenjangStudiID1 := uuid.New()
 		jenjangStudiID2 := uuid.New()
 
-		rows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(jenjangStudiID1, "SD", time.Now(), time.Now()).
-			AddRow(jenjangStudiID2, "SMP", time.Now(), time.Now())
+		rows := sqlmock.NewRows([]string{"id", "code", "name", "description", "period", "created_at", "updated_at"}).
+			AddRow(jenjangStudiID1, "JS001", "SD", "Test Description", "S", time.Now(), time.Now()).
+			AddRow(jenjangStudiID2, "JS002", "SMP", "Test Description", "S", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenjang_studi" ORDER BY created_at DESC`)).
 			WillReturnRows(rows)
@@ -62,8 +62,8 @@ func TestGetJenjangStudi(t *testing.T) {
 
 		jenjangStudiID := uuid.New()
 
-		rows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(jenjangStudiID, "SD", time.Now(), time.Now())
+		rows := sqlmock.NewRows([]string{"id", "code", "name", "description", "period", "created_at", "updated_at"}).
+			AddRow(jenjangStudiID, "JS001", "SD", "Test Description", "S", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenjang_studi" WHERE id = $1`)).
 			WithArgs(jenjangStudiID.String()).
@@ -158,8 +158,8 @@ func TestUpdateJenjangStudi(t *testing.T) {
 
 		jenjangStudiID := uuid.New()
 
-		rows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
-			AddRow(jenjangStudiID, "SD", time.Now(), time.Now())
+		rows := sqlmock.NewRows([]string{"id", "code", "name", "description", "period", "created_at", "updated_at"}).
+			AddRow(jenjangStudiID, "JS001", "SD", "Test Description", "S", time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenjang_studi" WHERE id = $1`)).
 			WithArgs(jenjangStudiID.String()).

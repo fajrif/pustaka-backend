@@ -33,9 +33,9 @@ func TestGetAllPublishers(t *testing.T) {
 		cityID1 := uuid.New()
 		cityID2 := uuid.New()
 
-		publisherRows := sqlmock.NewRows([]string{"id", "name", "address", "city_id", "area", "phone1", "phone2", "email", "website", "created_at", "updated_at"}).
-			AddRow(publisherID1, "Gramedia", "Jl. Test 1", cityID1, "Area 1", "021-111", "021-112", "gramedia@example.com", "www.gramedia.com", time.Now(), time.Now()).
-			AddRow(publisherID2, "Erlangga", "Jl. Test 2", cityID2, "Area 2", "021-222", nil, nil, nil, time.Now(), time.Now())
+		publisherRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "address", "city_id", "area", "phone1", "phone2", "email", "website", "created_at", "updated_at"}).
+			AddRow(publisherID1, "PUB001", "Gramedia", "Test Description", "Jl. Test 1", cityID1, "Area 1", "021-111", "021-112", "gramedia@example.com", "www.gramedia.com", time.Now(), time.Now()).
+			AddRow(publisherID2, "PUB002", "Erlangga", nil, "Jl. Test 2", cityID2, "Area 2", "021-222", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "publishers" ORDER BY created_at DESC`)).
 			WillReturnRows(publisherRows)
@@ -73,8 +73,8 @@ func TestGetPublisher(t *testing.T) {
 		publisherID := uuid.New()
 		cityID := uuid.New()
 
-		publisherRows := sqlmock.NewRows([]string{"id", "name", "address", "city_id", "area", "phone1", "phone2", "email", "website", "created_at", "updated_at"}).
-			AddRow(publisherID, "Gramedia", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, time.Now(), time.Now())
+		publisherRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "address", "city_id", "area", "phone1", "phone2", "email", "website", "created_at", "updated_at"}).
+			AddRow(publisherID, "PUB001", "Gramedia", "Test Description", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "publishers" WHERE id = $1`)).
 			WithArgs(publisherID.String()).
@@ -181,8 +181,8 @@ func TestUpdatePublisher(t *testing.T) {
 		publisherID := uuid.New()
 		cityID := uuid.New()
 
-		publisherRows := sqlmock.NewRows([]string{"id", "name", "address", "city_id", "area", "phone1", "phone2", "email", "website", "created_at", "updated_at"}).
-			AddRow(publisherID, "Gramedia", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, time.Now(), time.Now())
+		publisherRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "address", "city_id", "area", "phone1", "phone2", "email", "website", "created_at", "updated_at"}).
+			AddRow(publisherID, "PUB001", "Gramedia", "Test Description", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "publishers" WHERE id = $1`)).
 			WithArgs(publisherID.String()).
