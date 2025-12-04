@@ -72,7 +72,7 @@ build:
 
 test:
 	@echo "🧪 Running tests..."
-	go test -v ./...
+	go test ./tests/...
 
 clean:
 	@echo "🧹 Cleaning build artifacts..."

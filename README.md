@@ -82,3 +82,22 @@ make migrate-rollback # Same as db-rollback
 
 ---
 
+### Running Tests
+
+The tests are now well-organized, maintainable, and follow Go testing best practices! 🎉
+
+```bash
+# Run all tests
+go test ./tests/...
+
+# Run specific package tests
+go test ./tests/handlers
+go test ./tests/middleware
+go test ./tests/helpers
+
+# Run with verbose output
+go test -v ./tests/...
+
+# Run with coverage
+go test ./tests/... -cover
+```

@@ -56,3 +56,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example  # keep example
+
+# ignore claude files
+.claude/
+CLAUDE.md

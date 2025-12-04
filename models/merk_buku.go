@@ -12,7 +12,7 @@ type MerkBuku struct {
 	NamaMerk       *string   `gorm:"column:nama_merk;not null" json:"nama_merk"`
 	BantuanPromosi *int      `json:"bantuan_promosi"`
 	UserID         uuid.UUID `gorm:"type:uuid" json:"user_id"`
-	User           User 		 `gorm:"foreignKey:UserId" json:"user_details"`
+	User           User 		 `gorm:"foreignKey:UserID" json:"user_details"`
 	Tstamp         time.Time `json:"tstamp" db:"tstamp"`
 }
 

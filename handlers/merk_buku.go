@@ -61,7 +61,7 @@ func CreateMerkBuku(c *fiber.Ctx) error {
     //     })
     // }
 
-    userID := c.Locals("ID").(uuid.UUID)
+    userID := c.Locals("userID").(uuid.UUID)
     merk_buku.UserID = userID
 
     if err := config.DB.Create(&merk_buku).Error; err != nil {
@@ -88,6 +88,9 @@ func UpdateMerkBuku(c *fiber.Ctx) error {
             "error": "Invalid request body",
         })
     }
+
+    userID := c.Locals("userID").(uuid.UUID)
+    merk_buku.UserID = userID
 
 		fmt.Printf("MerkBuku object: %+v\n", merk_buku)
 
