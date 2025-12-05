@@ -38,6 +38,10 @@ func TestGetAllCities(t *testing.T) {
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" ORDER BY created_at DESC`)).
 			WillReturnRows(cityRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "cities"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/cities", nil)
 		resp, _ := app.Test(req)
 
@@ -48,6 +52,7 @@ func TestGetAllCities(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["cities"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Empty list", func(t *testing.T) {
@@ -57,8 +62,12 @@ func TestGetAllCities(t *testing.T) {
 
 		cityRows := sqlmock.NewRows([]string{"id", "code", "name", "created_at", "updated_at"})
 
-		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" ORDER BY created_at DESC`)).
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" ORDER BY created_at DESC LIMIT 20`)).
 			WillReturnRows(cityRows)
+
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(0)
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "cities"`)).
+			WillReturnRows(countRows)
 
 		req := httptest.NewRequest("GET", "/cities", nil)
 		resp, _ := app.Test(req)
@@ -70,6 +79,7 @@ func TestGetAllCities(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["cities"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Search filter by code", func(t *testing.T) {
@@ -82,9 +92,14 @@ func TestGetAllCities(t *testing.T) {
 		cityRows := sqlmock.NewRows([]string{"id", "code", "name", "created_at", "updated_at"}).
 			AddRow(cityID, "JKT", "Jakarta", time.Now(), time.Now())
 
-		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE cities.code ILIKE $1 OR cities.name ILIKE $2 ORDER BY created_at DESC`)).
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE cities.code ILIKE $1 OR cities.name ILIKE $2 ORDER BY created_at DESC LIMIT 20`)).
 			WithArgs("%JKT%", "%JKT%").
 			WillReturnRows(cityRows)
+
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "cities" WHERE cities.code ILIKE $1 OR cities.name ILIKE $2`)).
+			WithArgs("%JKT%", "%JKT%").
+			WillReturnRows(countRows)
 
 		req := httptest.NewRequest("GET", "/cities?search=JKT", nil)
 		resp, _ := app.Test(req)
@@ -96,6 +111,7 @@ func TestGetAllCities(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["cities"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Search filter by name", func(t *testing.T) {
@@ -108,9 +124,14 @@ func TestGetAllCities(t *testing.T) {
 		cityRows := sqlmock.NewRows([]string{"id", "code", "name", "created_at", "updated_at"}).
 			AddRow(cityID, "JKT", "Jakarta", time.Now(), time.Now())
 
-		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE cities.code ILIKE $1 OR cities.name ILIKE $2 ORDER BY created_at DESC`)).
+		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE cities.code ILIKE $1 OR cities.name ILIKE $2 ORDER BY created_at DESC LIMIT 20`)).
 			WithArgs("%Jakarta%", "%Jakarta%").
 			WillReturnRows(cityRows)
+
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "cities" WHERE cities.code ILIKE $1 OR cities.name ILIKE $2`)).
+			WithArgs("%Jakarta%", "%Jakarta%").
+			WillReturnRows(countRows)
 
 		req := httptest.NewRequest("GET", "/cities?search=Jakarta", nil)
 		resp, _ := app.Test(req)
@@ -122,6 +143,7 @@ func TestGetAllCities(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["cities"])
+		assert.NotNil(t, response["pagination"])
 	})
 }
 

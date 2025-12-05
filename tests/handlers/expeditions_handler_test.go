@@ -48,6 +48,10 @@ func TestGetAllExpeditions(t *testing.T) {
 			WithArgs(cityID1, cityID2).
 			WillReturnRows(cityRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "expeditions"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/expeditions", nil)
 		resp, _ := app.Test(req)
 
@@ -58,6 +62,7 @@ func TestGetAllExpeditions(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["expeditions"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Search filter by code", func(t *testing.T) {
@@ -83,6 +88,10 @@ func TestGetAllExpeditions(t *testing.T) {
 			WithArgs(cityID).
 			WillReturnRows(cityRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "expeditions"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/expeditions?search=EXP001", nil)
 		resp, _ := app.Test(req)
 
@@ -93,6 +102,7 @@ func TestGetAllExpeditions(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["expeditions"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Search filter by name", func(t *testing.T) {
@@ -116,6 +126,10 @@ func TestGetAllExpeditions(t *testing.T) {
 		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE "cities"."id" = $1`)).
 			WithArgs(cityID).
 			WillReturnRows(cityRows)
+
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "expeditions"`)).
+			WillReturnRows(countRows)
 
 		req := httptest.NewRequest("GET", "/expeditions?search=JNE", nil)
 		resp, _ := app.Test(req)

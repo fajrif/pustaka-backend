@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"pustaka-backend/config"
+	"pustaka-backend/helpers"
 	"pustaka-backend/models"
 	"github.com/gofiber/fiber/v2"
 )
@@ -14,24 +15,35 @@ import (
 // @Produce json
 // @Security BearerAuth
 // @Param search query string false "Search by name or description"
-// @Success 200 {object} map[string]interface{} "List of all books"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 20)"
+// @Success 200 {object} map[string]interface{} "List of all books with pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/books [get]
 func GetAllBooks(c *fiber.Ctx) error {
 	var books []models.Book
+
+	// Get pagination parameters
+	pagination := helpers.GetPaginationParams(c)
+
 	query := config.DB.Order("created_at DESC")
+	queryCount := config.DB.Model(&models.Book{})
 
 	// Filter search
 	if searchQuery := c.Query("search"); searchQuery != "" {
 		// Wrap string search with wildcard SQL LIKE
 		searchTerm := "%" + searchQuery + "%"
+		cond := "books.name ILIKE ? OR books.description ILIKE ?"
+		args := []interface{}{searchTerm, searchTerm}
 
-		query = query.
-			Where("books.name ILIKE ? OR books.description ILIKE ?", searchTerm, searchTerm)
+		query = query.Where(cond, args...)
+		queryCount = queryCount.Where(cond, args...)
 	}
 
+	// Apply pagination and fetch data
 	if err := query.
+		Offset(pagination.Offset).Limit(pagination.Limit).
 		Preload("JenisBuku").
 		Preload("JenjangStudi").
 		Preload("BidangStudi").
@@ -44,9 +56,15 @@ func GetAllBooks(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"books": books,
-	})
+	// Create pagination response
+	response, err := helpers.CreatePaginationResponse(queryCount, books, "books", pagination.Page, pagination.Limit)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create pagination response",
+		})
+	}
+
+	return c.JSON(response)
 }
 
 // GetBook godoc

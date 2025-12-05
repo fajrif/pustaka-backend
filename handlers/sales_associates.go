@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"pustaka-backend/config"
+	"pustaka-backend/helpers"
 	"pustaka-backend/models"
 	"github.com/gofiber/fiber/v2"
 )
@@ -14,32 +15,48 @@ import (
 // @Produce json
 // @Security BearerAuth
 // @Param search query string false "Search by code, name, or description"
-// @Success 200 {object} map[string]interface{} "List of all sales associates"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 20)"
+// @Success 200 {object} map[string]interface{} "List of all sales associates with pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/sales-associates [get]
 func GetAllSalesAssociates(c *fiber.Ctx) error {
 	var salesAssociates []models.SalesAssociate
+
+	// Get pagination parameters
+	pagination := helpers.GetPaginationParams(c)
+
 	query := config.DB.Order("created_at DESC")
+	queryCount := config.DB.Model(&models.SalesAssociate{})
 
 	// Filter search
 	if searchQuery := c.Query("search"); searchQuery != "" {
 		// Wrap string search with wildcard SQL LIKE
 		searchTerm := "%" + searchQuery + "%"
+		cond := "sales_associates.code ILIKE ? OR sales_associates.name ILIKE ? OR sales_associates.description ILIKE ?"
+		args := []interface{}{searchTerm, searchTerm, searchTerm}
 
-		query = query.
-			Where("sales_associates.code ILIKE ? OR sales_associates.name ILIKE ? OR sales_associates.description ILIKE ?", searchTerm, searchTerm, searchTerm)
+		query = query.Where(cond, args...)
+		queryCount = queryCount.Where(cond, args...)
 	}
 
-	if err := query.Preload("City").Find(&salesAssociates).Error; err != nil {
+	// Apply pagination and fetch data
+	if err := query.Offset(pagination.Offset).Limit(pagination.Limit).Preload("City").Find(&salesAssociates).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch all sales associates",
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"sales_associates": salesAssociates,
-	})
+	// Create pagination response
+	response, err := helpers.CreatePaginationResponse(queryCount, salesAssociates, "sales_associates", pagination.Page, pagination.Limit)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create pagination response",
+		})
+	}
+
+	return c.JSON(response)
 }
 
 // GetSalesAssociate godoc

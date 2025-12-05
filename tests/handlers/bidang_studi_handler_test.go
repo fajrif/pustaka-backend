@@ -38,6 +38,10 @@ func TestGetAllBidangStudi(t *testing.T) {
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "bidang_studi" ORDER BY created_at DESC`)).
 			WillReturnRows(rows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "bidang_studi"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/bidang-studi", nil)
 		resp, _ := app.Test(req)
 
@@ -48,6 +52,7 @@ func TestGetAllBidangStudi(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["bidang_studi"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Search filter by code", func(t *testing.T) {
@@ -65,6 +70,10 @@ func TestGetAllBidangStudi(t *testing.T) {
 			WithArgs("%BS001%", "%BS001%", "%BS001%").
 			WillReturnRows(bidangStudiRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "bidang_studi"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/bidang-studi?search=BS001", nil)
 		resp, _ := app.Test(req)
 
@@ -75,6 +84,7 @@ func TestGetAllBidangStudi(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["bidang_studi"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Search filter by name", func(t *testing.T) {
@@ -91,6 +101,10 @@ func TestGetAllBidangStudi(t *testing.T) {
 			WithArgs("%Science%", "%Science%", "%Science%").
 			WillReturnRows(bidangStudiRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "bidang_studi"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/bidang-studi?search=Science", nil)
 		resp, _ := app.Test(req)
 
@@ -101,6 +115,38 @@ func TestGetAllBidangStudi(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["bidang_studi"])
+		assert.NotNil(t, response["pagination"])
+	})
+
+	t.Run("Search filter by description", func(t *testing.T) {
+		db4, mock4, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db4)
+
+		bidangStudiID := uuid.New()
+
+		bidangStudiRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(bidangStudiID, "BS001", "Science", "meta-science", time.Now(), time.Now())
+
+		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "bidang_studi" WHERE bidang_studi.code ILIKE $1 OR bidang_studi.name ILIKE $2 OR bidang_studi.description ILIKE $3 ORDER BY created_at DESC`)).
+			WithArgs("%meta-science%", "%meta-science%", "%meta-science%").
+			WillReturnRows(bidangStudiRows)
+
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "bidang_studi"`)).
+			WillReturnRows(countRows)
+
+		req := httptest.NewRequest("GET", "/bidang-studi?search=meta-science", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["bidang_studi"])
+		assert.NotNil(t, response["pagination"])
 	})
 }
 

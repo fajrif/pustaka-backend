@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"pustaka-backend/config"
+	"pustaka-backend/helpers"
 	"pustaka-backend/models"
 	"github.com/gofiber/fiber/v2"
 )
@@ -14,32 +15,48 @@ import (
 // @Produce json
 // @Security BearerAuth
 // @Param search query string false "Search by code, name, or description"
-// @Success 200 {object} map[string]interface{} "List of all publishers"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 20)"
+// @Success 200 {object} map[string]interface{} "List of all publishers with pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/publishers [get]
 func GetAllPublishers(c *fiber.Ctx) error {
 	var publishers []models.Publisher
+
+	// Get pagination parameters
+	pagination := helpers.GetPaginationParams(c)
+
 	query := config.DB.Order("created_at DESC")
+	queryCount := config.DB.Model(&models.Publisher{})
 
 	// Filter search
 	if searchQuery := c.Query("search"); searchQuery != "" {
 		// Wrap string search with wildcard SQL LIKE
 		searchTerm := "%" + searchQuery + "%"
+		cond := "publishers.code ILIKE ? OR publishers.name ILIKE ? OR publishers.description ILIKE ?"
+		args := []interface{}{searchTerm, searchTerm, searchTerm}
 
-		query = query.
-			Where("publishers.code ILIKE ? OR publishers.name ILIKE ? OR publishers.description ILIKE ?", searchTerm, searchTerm, searchTerm)
+		query = query.Where(cond, args...)
+		queryCount = queryCount.Where(cond, args...)
 	}
 
-	if err := query.Preload("City").Find(&publishers).Error; err != nil {
+	// Apply pagination and fetch data
+	if err := query.Offset(pagination.Offset).Limit(pagination.Limit).Preload("City").Find(&publishers).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch all publishers",
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"publishers": publishers,
-	})
+	// Create pagination response
+	response, err := helpers.CreatePaginationResponse(queryCount, publishers, "publishers", pagination.Page, pagination.Limit)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create pagination response",
+		})
+	}
+
+	return c.JSON(response)
 }
 
 // GetPublisher godoc

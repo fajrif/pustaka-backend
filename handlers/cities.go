@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"pustaka-backend/config"
+	"pustaka-backend/helpers"
 	"pustaka-backend/models"
 	"github.com/gofiber/fiber/v2"
 	//"github.com/google/uuid"
@@ -15,32 +16,48 @@ import (
 // @Produce json
 // @Security BearerAuth
 // @Param search query string false "Search by code or name"
-// @Success 200 {object} map[string]interface{} "List of all cities"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 20)"
+// @Success 200 {object} map[string]interface{} "List of all cities with pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/cities [get]
 func GetAllCities(c *fiber.Ctx) error {
 	var cities []models.City
+
+	// Get pagination parameters
+	pagination := helpers.GetPaginationParams(c)
+
 	query := config.DB.Order("created_at DESC")
+	queryCount := config.DB.Model(&models.City{})
 
 	// Filter search
 	if searchQuery := c.Query("search"); searchQuery != "" {
 		// Wrap string search with wildcard SQL LIKE
 		searchTerm := "%" + searchQuery + "%"
+		cond := "cities.code ILIKE ? OR cities.name ILIKE ?"
+		args := []interface{}{searchTerm, searchTerm}
 
-		query = query.
-			Where("cities.code ILIKE ? OR cities.name ILIKE ?", searchTerm, searchTerm)
+		query = query.Where(cond, args...)
+		queryCount = queryCount.Where(cond, args...)
 	}
 
-	if err := query.Find(&cities).Error; err != nil {
+	// Apply pagination and fetch data
+	if err := query.Offset(pagination.Offset).Limit(pagination.Limit).Find(&cities).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch all cities",
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"cities": cities,
-	})
+	// Create pagination response
+	response, err := helpers.CreatePaginationResponse(queryCount, cities, "cities", pagination.Page, pagination.Limit)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create pagination response",
+		})
+	}
+
+	return c.JSON(response)
 }
 
 // GetCity godoc

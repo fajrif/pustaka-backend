@@ -38,6 +38,10 @@ func TestGetAllBooks(t *testing.T) {
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" ORDER BY created_at DESC`)).
 			WillReturnRows(bookRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "books"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/books", nil)
 		resp, _ := app.Test(req)
 
@@ -48,6 +52,7 @@ func TestGetAllBooks(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["books"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Empty list", func(t *testing.T) {
@@ -60,6 +65,10 @@ func TestGetAllBooks(t *testing.T) {
 		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" ORDER BY created_at DESC`)).
 			WillReturnRows(bookRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(0)
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "books"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/books", nil)
 		resp, _ := app.Test(req)
 
@@ -70,6 +79,7 @@ func TestGetAllBooks(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["books"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Database error", func(t *testing.T) {
@@ -107,6 +117,10 @@ func TestGetAllBooks(t *testing.T) {
 			WithArgs("%Mathematics%", "%Mathematics%").
 			WillReturnRows(bookRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "books"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/books?search=Mathematics", nil)
 		resp, _ := app.Test(req)
 
@@ -117,6 +131,7 @@ func TestGetAllBooks(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["books"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Search filter by description", func(t *testing.T) {
@@ -134,6 +149,10 @@ func TestGetAllBooks(t *testing.T) {
 			WithArgs("%Science%", "%Science%").
 			WillReturnRows(bookRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "books"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/books?search=Science", nil)
 		resp, _ := app.Test(req)
 
@@ -144,6 +163,7 @@ func TestGetAllBooks(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["books"])
+		assert.NotNil(t, response["pagination"])
 	})
 }
 

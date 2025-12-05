@@ -38,6 +38,10 @@ func TestGetAllJenisBuku(t *testing.T) {
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenis_buku" ORDER BY created_at DESC`)).
 			WillReturnRows(jenisBukuRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "jenis_buku"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/jenis-buku", nil)
 		resp, _ := app.Test(req)
 
@@ -48,6 +52,7 @@ func TestGetAllJenisBuku(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["jenis_buku"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Search filter by code", func(t *testing.T) {
@@ -65,6 +70,10 @@ func TestGetAllJenisBuku(t *testing.T) {
 			WithArgs("%JB001%", "%JB001%", "%JB001%").
 			WillReturnRows(jenisBukuRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "jenis_buku"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/jenis-buku?search=JB001", nil)
 		resp, _ := app.Test(req)
 
@@ -75,6 +84,7 @@ func TestGetAllJenisBuku(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["jenis_buku"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Search filter by name", func(t *testing.T) {
@@ -91,6 +101,10 @@ func TestGetAllJenisBuku(t *testing.T) {
 			WithArgs("%Textbook%", "%Textbook%", "%Textbook%").
 			WillReturnRows(jenisBukuRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "jenis_buku"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/jenis-buku?search=Textbook", nil)
 		resp, _ := app.Test(req)
 
@@ -101,6 +115,7 @@ func TestGetAllJenisBuku(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["jenis_buku"])
+		assert.NotNil(t, response["pagination"])
 	})
 }
 

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"pustaka-backend/config"
+	"pustaka-backend/helpers"
 	"pustaka-backend/models"
 	"github.com/gofiber/fiber/v2"
 )
@@ -14,32 +15,48 @@ import (
 // @Produce json
 // @Security BearerAuth
 // @Param search query string false "Search by code, name, or description"
-// @Success 200 {object} map[string]interface{} "List of all bidang studi"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 20)"
+// @Success 200 {object} map[string]interface{} "List of all bidang studi with pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/bidang-studi [get]
 func GetAllBidangStudi(c *fiber.Ctx) error {
 	var bidangStudi []models.BidangStudi
+
+	// Get pagination parameters
+	pagination := helpers.GetPaginationParams(c)
+
 	query := config.DB.Order("created_at DESC")
+	queryCount := config.DB.Model(&models.BidangStudi{})
 
 	// Filter search
 	if searchQuery := c.Query("search"); searchQuery != "" {
 		// Wrap string search with wildcard SQL LIKE
 		searchTerm := "%" + searchQuery + "%"
+		cond := "bidang_studi.code ILIKE ? OR bidang_studi.name ILIKE ? OR bidang_studi.description ILIKE ?"
+		args := []interface{}{searchTerm, searchTerm, searchTerm}
 
-		query = query.
-			Where("bidang_studi.code ILIKE ? OR bidang_studi.name ILIKE ? OR bidang_studi.description ILIKE ?", searchTerm, searchTerm, searchTerm)
+		query = query.Where(cond, args...)
+		queryCount = queryCount.Where(cond, args...)
 	}
 
-	if err := query.Find(&bidangStudi).Error; err != nil {
+	// Apply pagination and fetch data
+	if err := query.Offset(pagination.Offset).Limit(pagination.Limit).Find(&bidangStudi).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch all bidang studi",
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"bidang_studi": bidangStudi,
-	})
+	// Create pagination response
+	response, err := helpers.CreatePaginationResponse(queryCount, bidangStudi, "bidang_studi", pagination.Page, pagination.Limit)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create pagination response",
+		})
+	}
+
+	return c.JSON(response)
 }
 
 // GetBidangStudi godoc

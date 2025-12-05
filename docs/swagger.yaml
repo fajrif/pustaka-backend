@@ -366,11 +366,19 @@ paths:
         in: query
         name: search
         type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: List of all bidang studi
+          description: List of all bidang studi with pagination
           schema:
             additionalProperties: true
             type: object
@@ -557,11 +565,19 @@ paths:
         in: query
         name: search
         type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: List of all books
+          description: List of all books with pagination
           schema:
             additionalProperties: true
             type: object
@@ -748,11 +764,19 @@ paths:
         in: query
         name: search
         type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: List of all cities
+          description: List of all cities with pagination
           schema:
             additionalProperties: true
             type: object
@@ -939,11 +963,19 @@ paths:
         in: query
         name: search
         type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: List of all expeditions
+          description: List of all expeditions with pagination
           schema:
             additionalProperties: true
             type: object
@@ -1130,11 +1162,19 @@ paths:
         in: query
         name: search
         type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: List of all jenis buku
+          description: List of all jenis buku with pagination
           schema:
             additionalProperties: true
             type: object
@@ -1322,11 +1362,19 @@ paths:
         in: query
         name: search
         type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: List of all jenjang studi
+          description: List of all jenjang studi with pagination
           schema:
             additionalProperties: true
             type: object
@@ -1513,11 +1561,19 @@ paths:
         in: query
         name: search
         type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: List of all kelas
+          description: List of all kelas with pagination
           schema:
             additionalProperties: true
             type: object
@@ -1961,11 +2017,19 @@ paths:
         in: query
         name: search
         type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: List of all publishers
+          description: List of all publishers with pagination
           schema:
             additionalProperties: true
             type: object
@@ -2152,11 +2216,19 @@ paths:
         in: query
         name: search
         type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: List of all sales associates
+          description: List of all sales associates with pagination
           schema:
             additionalProperties: true
             type: object

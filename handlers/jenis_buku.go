@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"pustaka-backend/config"
+	"pustaka-backend/helpers"
 	"pustaka-backend/models"
 	"github.com/gofiber/fiber/v2"
 )
@@ -14,32 +15,48 @@ import (
 // @Produce json
 // @Security BearerAuth
 // @Param search query string false "Search by code, name, or description"
-// @Success 200 {object} map[string]interface{} "List of all jenis buku"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 20)"
+// @Success 200 {object} map[string]interface{} "List of all jenis buku with pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/jenis-buku [get]
 func GetAllJenisBuku(c *fiber.Ctx) error {
 	var jenisBuku []models.JenisBuku
+
+	// Get pagination parameters
+	pagination := helpers.GetPaginationParams(c)
+
 	query := config.DB.Order("created_at DESC")
+	queryCount := config.DB.Model(&models.JenisBuku{})
 
 	// Filter search
 	if searchQuery := c.Query("search"); searchQuery != "" {
 		// Wrap string search with wildcard SQL LIKE
 		searchTerm := "%" + searchQuery + "%"
+		cond := "jenis_buku.code ILIKE ? OR jenis_buku.name ILIKE ? OR jenis_buku.description ILIKE ?"
+		args := []interface{}{searchTerm, searchTerm, searchTerm}
 
-		query = query.
-			Where("jenis_buku.code ILIKE ? OR jenis_buku.name ILIKE ? OR jenis_buku.description ILIKE ?", searchTerm, searchTerm, searchTerm)
+		query = query.Where(cond, args...)
+		queryCount = queryCount.Where(cond, args...)
 	}
 
-	if err := query.Find(&jenisBuku).Error; err != nil {
+	// Apply pagination and fetch data
+	if err := query.Offset(pagination.Offset).Limit(pagination.Limit).Find(&jenisBuku).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch all jenis buku",
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"jenis_buku": jenisBuku,
-	})
+	// Create pagination response
+	response, err := helpers.CreatePaginationResponse(queryCount, jenisBuku, "jenis_buku", pagination.Page, pagination.Limit)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create pagination response",
+		})
+	}
+
+	return c.JSON(response)
 }
 
 // GetJenisBuku godoc

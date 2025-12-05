@@ -159,11 +159,23 @@ const docTemplate = `{
                         "description": "Search by code, name, or description",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of all bidang studi",
+                        "description": "List of all bidang studi with pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -449,11 +461,23 @@ const docTemplate = `{
                         "description": "Search by name or description",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of all books",
+                        "description": "List of all books with pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -739,11 +763,23 @@ const docTemplate = `{
                         "description": "Search by code or name",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of all cities",
+                        "description": "List of all cities with pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1029,11 +1065,23 @@ const docTemplate = `{
                         "description": "Search by code, name, or description",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of all expeditions",
+                        "description": "List of all expeditions with pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1319,11 +1367,23 @@ const docTemplate = `{
                         "description": "Search by code, name, or description",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of all jenis buku",
+                        "description": "List of all jenis buku with pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1609,11 +1669,23 @@ const docTemplate = `{
                         "description": "Search by code, name, or description",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of all jenjang studi",
+                        "description": "List of all jenjang studi with pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1899,11 +1971,23 @@ const docTemplate = `{
                         "description": "Search by code, name, or description",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of all kelas",
+                        "description": "List of all kelas with pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2579,11 +2663,23 @@ const docTemplate = `{
                         "description": "Search by code, name, or description",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of all publishers",
+                        "description": "List of all publishers with pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2869,11 +2965,23 @@ const docTemplate = `{
                         "description": "Search by code, name, or description",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of all sales associates",
+                        "description": "List of all sales associates with pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true

@@ -50,6 +50,10 @@ func TestGetAllSalesAssociates(t *testing.T) {
 			WithArgs(cityID1, cityID2).
 			WillReturnRows(cityRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "sales_associates"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/sales-associates", nil)
 		resp, _ := app.Test(req)
 
@@ -60,6 +64,7 @@ func TestGetAllSalesAssociates(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["sales_associates"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Search filter by code", func(t *testing.T) {
@@ -86,6 +91,10 @@ func TestGetAllSalesAssociates(t *testing.T) {
 			WithArgs(cityID).
 			WillReturnRows(cityRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "sales_associates"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/sales-associates?search=SA001", nil)
 		resp, _ := app.Test(req)
 
@@ -96,6 +105,7 @@ func TestGetAllSalesAssociates(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["sales_associates"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Search filter by name", func(t *testing.T) {
@@ -121,6 +131,10 @@ func TestGetAllSalesAssociates(t *testing.T) {
 			WithArgs(cityID).
 			WillReturnRows(cityRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "sales_associates"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/sales-associates?search=SalesA", nil)
 		resp, _ := app.Test(req)
 
@@ -131,6 +145,7 @@ func TestGetAllSalesAssociates(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["sales_associates"])
+		assert.NotNil(t, response["pagination"])
 	})
 }
 

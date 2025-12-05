@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"pustaka-backend/config"
+	"pustaka-backend/helpers"
 	"pustaka-backend/models"
 	"github.com/gofiber/fiber/v2"
 )
@@ -14,32 +15,48 @@ import (
 // @Produce json
 // @Security BearerAuth
 // @Param search query string false "Search by code, name, or description"
-// @Success 200 {object} map[string]interface{} "List of all kelas"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 20)"
+// @Success 200 {object} map[string]interface{} "List of all kelas with pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/kelas [get]
 func GetAllKelas(c *fiber.Ctx) error {
 	var kelas []models.Kelas
+
+	// Get pagination parameters
+	pagination := helpers.GetPaginationParams(c)
+
 	query := config.DB.Order("created_at DESC")
+	queryCount := config.DB.Model(&models.Kelas{})
 
 	// Filter search
 	if searchQuery := c.Query("search"); searchQuery != "" {
 		// Wrap string search with wildcard SQL LIKE
 		searchTerm := "%" + searchQuery + "%"
+		cond := "kelas.code ILIKE ? OR kelas.name ILIKE ? OR kelas.description ILIKE ?"
+		args := []interface{}{searchTerm, searchTerm, searchTerm}
 
-		query = query.
-			Where("kelas.code ILIKE ? OR kelas.name ILIKE ? OR kelas.description ILIKE ?", searchTerm, searchTerm, searchTerm)
+		query = query.Where(cond, args...)
+		queryCount = queryCount.Where(cond, args...)
 	}
 
-	if err := query.Find(&kelas).Error; err != nil {
+	// Apply pagination and fetch data
+	if err := query.Offset(pagination.Offset).Limit(pagination.Limit).Find(&kelas).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch all kelas",
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"kelas": kelas,
-	})
+	// Create pagination response
+	response, err := helpers.CreatePaginationResponse(queryCount, kelas, "kelas", pagination.Page, pagination.Limit)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create pagination response",
+		})
+	}
+
+	return c.JSON(response)
 }
 
 // GetKelas godoc

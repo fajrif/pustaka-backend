@@ -48,6 +48,10 @@ func TestGetAllPublishers(t *testing.T) {
 			WithArgs(cityID1, cityID2).
 			WillReturnRows(cityRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "publishers"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/publishers", nil)
 		resp, _ := app.Test(req)
 
@@ -58,6 +62,7 @@ func TestGetAllPublishers(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["publishers"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Search filter by code", func(t *testing.T) {
@@ -83,6 +88,10 @@ func TestGetAllPublishers(t *testing.T) {
 			WithArgs(cityID).
 			WillReturnRows(cityRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "publishers"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/publishers?search=PUB001", nil)
 		resp, _ := app.Test(req)
 
@@ -93,6 +102,7 @@ func TestGetAllPublishers(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["publishers"])
+		assert.NotNil(t, response["pagination"])
 	})
 
 	t.Run("Search filter by name", func(t *testing.T) {
@@ -117,6 +127,10 @@ func TestGetAllPublishers(t *testing.T) {
 			WithArgs(cityID).
 			WillReturnRows(cityRows)
 
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "publishers"`)).
+			WillReturnRows(countRows)
+
 		req := httptest.NewRequest("GET", "/publishers?search=PublisherA", nil)
 		resp, _ := app.Test(req)
 
@@ -127,6 +141,46 @@ func TestGetAllPublishers(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.NotNil(t, response["publishers"])
+		assert.NotNil(t, response["pagination"])
+	})
+
+	t.Run("Search filter by description", func(t *testing.T) {
+		db4, mock4, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db4)
+
+		publisherID := uuid.New()
+		cityID := uuid.New()
+
+		publisherRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "address", "city_id", "area", "phone1", "phone2", "email", "website", "created_at", "updated_at"}).
+			AddRow(publisherID, "PUB001", "PublisherA", "Yang di Ampera", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, time.Now(), time.Now())
+
+		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "publishers" WHERE publishers.code ILIKE $1 OR publishers.name ILIKE $2 OR publishers.description ILIKE $3 ORDER BY created_at DESC`)).
+			WithArgs("%ampera%", "%ampera%", "%ampera%").
+			WillReturnRows(publisherRows)
+
+		cityRows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
+			AddRow(cityID, "Jakarta", time.Now(), time.Now())
+
+		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE "cities"."id" = $1`)).
+			WithArgs(cityID).
+			WillReturnRows(cityRows)
+
+		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
+		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "publishers"`)).
+			WillReturnRows(countRows)
+
+		req := httptest.NewRequest("GET", "/publishers?search=ampera", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["publishers"])
+		assert.NotNil(t, response["pagination"])
 	})
 }
 
