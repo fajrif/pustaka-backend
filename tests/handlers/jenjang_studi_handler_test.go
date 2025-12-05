@@ -49,6 +49,59 @@ func TestGetAllJenjangStudi(t *testing.T) {
 
 		assert.NotNil(t, response["jenjang_studi"])
 	})
+
+	t.Run("Search filter by code", func(t *testing.T) {
+		db2, mock2, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db2)
+
+		jenjangStudiID := uuid.New()
+		description := "Test Description"
+
+		jenjangStudiRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "period", "created_at", "updated_at"}).
+			AddRow(jenjangStudiID, "JS001", "Elementary", &description, "S", time.Now(), time.Now())
+
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenjang_studi" WHERE jenjang_studi.code ILIKE $1 OR jenjang_studi.name ILIKE $2 OR jenjang_studi.description ILIKE $3 ORDER BY created_at DESC`)).
+			WithArgs("%JS001%", "%JS001%", "%JS001%").
+			WillReturnRows(jenjangStudiRows)
+
+		req := httptest.NewRequest("GET", "/jenjang-studi?search=JS001", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["jenjang_studi"])
+	})
+
+	t.Run("Search filter by name", func(t *testing.T) {
+		db3, mock3, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db3)
+
+		jenjangStudiID := uuid.New()
+
+		jenjangStudiRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "period", "created_at", "updated_at"}).
+			AddRow(jenjangStudiID, "JS001", "Elementary", nil, "S", time.Now(), time.Now())
+
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenjang_studi" WHERE jenjang_studi.code ILIKE $1 OR jenjang_studi.name ILIKE $2 OR jenjang_studi.description ILIKE $3 ORDER BY created_at DESC`)).
+			WithArgs("%Elementary%", "%Elementary%", "%Elementary%").
+			WillReturnRows(jenjangStudiRows)
+
+		req := httptest.NewRequest("GET", "/jenjang-studi?search=Elementary", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["jenjang_studi"])
+	})
 }
 
 func TestGetJenjangStudi(t *testing.T) {

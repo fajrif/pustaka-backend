@@ -49,6 +49,59 @@ func TestGetAllBidangStudi(t *testing.T) {
 
 		assert.NotNil(t, response["bidang_studi"])
 	})
+
+	t.Run("Search filter by code", func(t *testing.T) {
+		db2, mock2, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db2)
+
+		bidangStudiID := uuid.New()
+		description := "Test Description"
+
+		bidangStudiRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(bidangStudiID, "BS001", "Science", &description, time.Now(), time.Now())
+
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "bidang_studi" WHERE bidang_studi.code ILIKE $1 OR bidang_studi.name ILIKE $2 OR bidang_studi.description ILIKE $3 ORDER BY created_at DESC`)).
+			WithArgs("%BS001%", "%BS001%", "%BS001%").
+			WillReturnRows(bidangStudiRows)
+
+		req := httptest.NewRequest("GET", "/bidang-studi?search=BS001", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["bidang_studi"])
+	})
+
+	t.Run("Search filter by name", func(t *testing.T) {
+		db3, mock3, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db3)
+
+		bidangStudiID := uuid.New()
+
+		bidangStudiRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(bidangStudiID, "BS001", "Science", nil, time.Now(), time.Now())
+
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "bidang_studi" WHERE bidang_studi.code ILIKE $1 OR bidang_studi.name ILIKE $2 OR bidang_studi.description ILIKE $3 ORDER BY created_at DESC`)).
+			WithArgs("%Science%", "%Science%", "%Science%").
+			WillReturnRows(bidangStudiRows)
+
+		req := httptest.NewRequest("GET", "/bidang-studi?search=Science", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["bidang_studi"])
+	})
 }
 
 func TestGetBidangStudi(t *testing.T) {

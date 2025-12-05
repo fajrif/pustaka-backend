@@ -151,6 +151,14 @@
                     "BidangStudi"
                 ],
                 "summary": "Get all bidang studi",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all bidang studi",
@@ -433,6 +441,14 @@
                     "Books"
                 ],
                 "summary": "Get all books",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by name or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all books",
@@ -715,6 +731,14 @@
                     "Cities"
                 ],
                 "summary": "Get all cities",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code or name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all cities",
@@ -997,6 +1021,14 @@
                     "Expeditions"
                 ],
                 "summary": "Get all expeditions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all expeditions",
@@ -1279,6 +1311,14 @@
                     "JenisBuku"
                 ],
                 "summary": "Get all jenis buku",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all jenis buku",
@@ -1561,6 +1601,14 @@
                     "JenjangStudi"
                 ],
                 "summary": "Get all jenjang studi",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all jenjang studi",
@@ -1843,6 +1891,14 @@
                     "Kelas"
                 ],
                 "summary": "Get all kelas",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all kelas",
@@ -2515,6 +2571,14 @@
                     "Publishers"
                 ],
                 "summary": "Get all publishers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all publishers",
@@ -2797,6 +2861,14 @@
                     "SalesAssociates"
                 ],
                 "summary": "Get all sales associates",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all sales associates",

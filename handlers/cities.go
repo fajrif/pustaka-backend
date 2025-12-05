@@ -14,6 +14,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param search query string false "Search by code or name"
 // @Success 200 {object} map[string]interface{} "List of all cities"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -21,6 +22,15 @@ import (
 func GetAllCities(c *fiber.Ctx) error {
 	var cities []models.City
 	query := config.DB.Order("created_at DESC")
+
+	// Filter search
+	if searchQuery := c.Query("search"); searchQuery != "" {
+		// Wrap string search with wildcard SQL LIKE
+		searchTerm := "%" + searchQuery + "%"
+
+		query = query.
+			Where("cities.code ILIKE ? OR cities.name ILIKE ?", searchTerm, searchTerm)
+	}
 
 	if err := query.Find(&cities).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

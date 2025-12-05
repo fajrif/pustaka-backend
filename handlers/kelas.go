@@ -13,6 +13,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param search query string false "Search by code, name, or description"
 // @Success 200 {object} map[string]interface{} "List of all kelas"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -20,6 +21,15 @@ import (
 func GetAllKelas(c *fiber.Ctx) error {
 	var kelas []models.Kelas
 	query := config.DB.Order("created_at DESC")
+
+	// Filter search
+	if searchQuery := c.Query("search"); searchQuery != "" {
+		// Wrap string search with wildcard SQL LIKE
+		searchTerm := "%" + searchQuery + "%"
+
+		query = query.
+			Where("kelas.code ILIKE ? OR kelas.name ILIKE ? OR kelas.description ILIKE ?", searchTerm, searchTerm, searchTerm)
+	}
 
 	if err := query.Find(&kelas).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

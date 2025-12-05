@@ -361,6 +361,11 @@ paths:
       - application/json
       description: Retrieve all fields of study (bidang studi) ordered by creation
         date
+      parameters:
+      - description: Search by code, name, or description
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -547,6 +552,11 @@ paths:
       consumes:
       - application/json
       description: Retrieve all books with their related entities
+      parameters:
+      - description: Search by name or description
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -733,6 +743,11 @@ paths:
       consumes:
       - application/json
       description: Retrieve all cities ordered by creation date
+      parameters:
+      - description: Search by code or name
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -919,6 +934,11 @@ paths:
       consumes:
       - application/json
       description: Retrieve all expeditions with their related city information
+      parameters:
+      - description: Search by code, name, or description
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -1105,6 +1125,11 @@ paths:
       consumes:
       - application/json
       description: Retrieve all book types (jenis buku) ordered by creation date
+      parameters:
+      - description: Search by code, name, or description
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -1292,6 +1317,11 @@ paths:
       - application/json
       description: Retrieve all education levels (jenjang studi) ordered by creation
         date
+      parameters:
+      - description: Search by code, name, or description
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -1478,6 +1508,11 @@ paths:
       consumes:
       - application/json
       description: Retrieve all classes (kelas) ordered by creation date
+      parameters:
+      - description: Search by code, name, or description
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -1921,6 +1956,11 @@ paths:
       consumes:
       - application/json
       description: Retrieve all publishers with their related city information
+      parameters:
+      - description: Search by code, name, or description
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -2107,6 +2147,11 @@ paths:
       consumes:
       - application/json
       description: Retrieve all sales associates with their related city information
+      parameters:
+      - description: Search by code, name, or description
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:

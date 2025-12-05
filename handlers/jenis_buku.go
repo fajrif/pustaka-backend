@@ -13,6 +13,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param search query string false "Search by code, name, or description"
 // @Success 200 {object} map[string]interface{} "List of all jenis buku"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -20,6 +21,15 @@ import (
 func GetAllJenisBuku(c *fiber.Ctx) error {
 	var jenisBuku []models.JenisBuku
 	query := config.DB.Order("created_at DESC")
+
+	// Filter search
+	if searchQuery := c.Query("search"); searchQuery != "" {
+		// Wrap string search with wildcard SQL LIKE
+		searchTerm := "%" + searchQuery + "%"
+
+		query = query.
+			Where("jenis_buku.code ILIKE ? OR jenis_buku.name ILIKE ? OR jenis_buku.description ILIKE ?", searchTerm, searchTerm, searchTerm)
+	}
 
 	if err := query.Find(&jenisBuku).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

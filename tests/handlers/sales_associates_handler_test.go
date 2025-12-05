@@ -61,6 +61,77 @@ func TestGetAllSalesAssociates(t *testing.T) {
 
 		assert.NotNil(t, response["sales_associates"])
 	})
+
+	t.Run("Search filter by code", func(t *testing.T) {
+		db2, mock2, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db2)
+
+		salesAssociateID := uuid.New()
+		cityID := uuid.New()
+		description := "Test Description"
+		joinDate := time.Now()
+
+		salesAssociateRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "address", "city_id", "area", "phone1", "phone2", "email", "website", "jenis_pembayaran", "join_date", "end_join_date", "discount", "created_at", "updated_at"}).
+			AddRow(salesAssociateID, "SA001", "Sales A", &description, "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, "T", joinDate, nil, 10.0, time.Now(), time.Now())
+
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_associates" WHERE sales_associates.code ILIKE $1 OR sales_associates.name ILIKE $2 OR sales_associates.description ILIKE $3 ORDER BY created_at DESC`)).
+			WithArgs("%SA001%", "%SA001%", "%SA001%").
+			WillReturnRows(salesAssociateRows)
+
+		cityRows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
+			AddRow(cityID, "Jakarta", time.Now(), time.Now())
+
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE "cities"."id" = $1`)).
+			WithArgs(cityID).
+			WillReturnRows(cityRows)
+
+		req := httptest.NewRequest("GET", "/sales-associates?search=SA001", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["sales_associates"])
+	})
+
+	t.Run("Search filter by name", func(t *testing.T) {
+		db3, mock3, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db3)
+
+		salesAssociateID := uuid.New()
+		cityID := uuid.New()
+		joinDate := time.Now()
+
+		salesAssociateRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "address", "city_id", "area", "phone1", "phone2", "email", "website", "jenis_pembayaran", "join_date", "end_join_date", "discount", "created_at", "updated_at"}).
+			AddRow(salesAssociateID, "SA001", "SalesA", nil, "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, "T", joinDate, nil, 10.0, time.Now(), time.Now())
+
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_associates" WHERE sales_associates.code ILIKE $1 OR sales_associates.name ILIKE $2 OR sales_associates.description ILIKE $3 ORDER BY created_at DESC`)).
+			WithArgs("%SalesA%", "%SalesA%", "%SalesA%").
+			WillReturnRows(salesAssociateRows)
+
+		cityRows := sqlmock.NewRows([]string{"id", "name", "created_at", "updated_at"}).
+			AddRow(cityID, "Jakarta", time.Now(), time.Now())
+
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE "cities"."id" = $1`)).
+			WithArgs(cityID).
+			WillReturnRows(cityRows)
+
+		req := httptest.NewRequest("GET", "/sales-associates?search=SalesA", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["sales_associates"])
+	})
 }
 
 func TestGetSalesAssociate(t *testing.T) {

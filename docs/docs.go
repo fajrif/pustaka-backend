@@ -153,6 +153,14 @@ const docTemplate = `{
                     "BidangStudi"
                 ],
                 "summary": "Get all bidang studi",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all bidang studi",
@@ -435,6 +443,14 @@ const docTemplate = `{
                     "Books"
                 ],
                 "summary": "Get all books",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by name or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all books",
@@ -717,6 +733,14 @@ const docTemplate = `{
                     "Cities"
                 ],
                 "summary": "Get all cities",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code or name",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all cities",
@@ -999,6 +1023,14 @@ const docTemplate = `{
                     "Expeditions"
                 ],
                 "summary": "Get all expeditions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all expeditions",
@@ -1281,6 +1313,14 @@ const docTemplate = `{
                     "JenisBuku"
                 ],
                 "summary": "Get all jenis buku",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all jenis buku",
@@ -1563,6 +1603,14 @@ const docTemplate = `{
                     "JenjangStudi"
                 ],
                 "summary": "Get all jenjang studi",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all jenjang studi",
@@ -1845,6 +1893,14 @@ const docTemplate = `{
                     "Kelas"
                 ],
                 "summary": "Get all kelas",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all kelas",
@@ -2517,6 +2573,14 @@ const docTemplate = `{
                     "Publishers"
                 ],
                 "summary": "Get all publishers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all publishers",
@@ -2799,6 +2863,14 @@ const docTemplate = `{
                     "SalesAssociates"
                 ],
                 "summary": "Get all sales associates",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all sales associates",

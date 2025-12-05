@@ -49,6 +49,59 @@ func TestGetAllJenisBuku(t *testing.T) {
 
 		assert.NotNil(t, response["jenis_buku"])
 	})
+
+	t.Run("Search filter by code", func(t *testing.T) {
+		db2, mock2, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db2)
+
+		jenisBukuID := uuid.New()
+		description := "Test Description"
+
+		jenisBukuRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(jenisBukuID, "JB001", "Textbook", &description, time.Now(), time.Now())
+
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenis_buku" WHERE jenis_buku.code ILIKE $1 OR jenis_buku.name ILIKE $2 OR jenis_buku.description ILIKE $3 ORDER BY created_at DESC`)).
+			WithArgs("%JB001%", "%JB001%", "%JB001%").
+			WillReturnRows(jenisBukuRows)
+
+		req := httptest.NewRequest("GET", "/jenis-buku?search=JB001", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["jenis_buku"])
+	})
+
+	t.Run("Search filter by name", func(t *testing.T) {
+		db3, mock3, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db3)
+
+		jenisBukuID := uuid.New()
+
+		jenisBukuRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(jenisBukuID, "JB001", "Textbook", nil, time.Now(), time.Now())
+
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenis_buku" WHERE jenis_buku.code ILIKE $1 OR jenis_buku.name ILIKE $2 OR jenis_buku.description ILIKE $3 ORDER BY created_at DESC`)).
+			WithArgs("%Textbook%", "%Textbook%", "%Textbook%").
+			WillReturnRows(jenisBukuRows)
+
+		req := httptest.NewRequest("GET", "/jenis-buku?search=Textbook", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["jenis_buku"])
+	})
 }
 
 func TestGetJenisBuku(t *testing.T) {

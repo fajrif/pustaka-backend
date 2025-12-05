@@ -49,6 +49,59 @@ func TestGetAllKelas(t *testing.T) {
 
 		assert.NotNil(t, response["kelas"])
 	})
+
+	t.Run("Search filter by code", func(t *testing.T) {
+		db2, mock2, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db2)
+
+		kelasID := uuid.New()
+		description := "Test Description"
+
+		kelasRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(kelasID, "K001", "Grade 1", &description, time.Now(), time.Now())
+
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "kelas" WHERE kelas.code ILIKE $1 OR kelas.name ILIKE $2 OR kelas.description ILIKE $3 ORDER BY created_at DESC`)).
+			WithArgs("%K001%", "%K001%", "%K001%").
+			WillReturnRows(kelasRows)
+
+		req := httptest.NewRequest("GET", "/kelas?search=K001", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["kelas"])
+	})
+
+	t.Run("Search filter by name", func(t *testing.T) {
+		db3, mock3, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db3)
+
+		kelasID := uuid.New()
+
+		kelasRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
+			AddRow(kelasID, "K001", "Grade", nil, time.Now(), time.Now())
+
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "kelas" WHERE kelas.code ILIKE $1 OR kelas.name ILIKE $2 OR kelas.description ILIKE $3 ORDER BY created_at DESC`)).
+			WithArgs("%Grade%", "%Grade%", "%Grade%").
+			WillReturnRows(kelasRows)
+
+		req := httptest.NewRequest("GET", "/kelas?search=Grade", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["kelas"])
+	})
 }
 
 func TestGetKelas(t *testing.T) {

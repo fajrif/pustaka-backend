@@ -91,6 +91,60 @@ func TestGetAllBooks(t *testing.T) {
 
 		assert.Equal(t, "Failed to fetch all books", response["error"])
 	})
+
+	t.Run("Search filter by name", func(t *testing.T) {
+		db3, mock3, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db3)
+
+		bookID := uuid.New()
+		description := "Test book description"
+
+		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
+			AddRow(bookID, "Mathematics Grade 1", &description, "2024", nil, nil, nil, nil, nil, 50000.00, time.Now(), time.Now())
+
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" WHERE books.name ILIKE $1 OR books.description ILIKE $2 ORDER BY created_at DESC`)).
+			WithArgs("%Mathematics%", "%Mathematics%").
+			WillReturnRows(bookRows)
+
+		req := httptest.NewRequest("GET", "/books?search=Mathematics", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["books"])
+	})
+
+	t.Run("Search filter by description", func(t *testing.T) {
+		db4, mock4, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db4)
+
+		bookID := uuid.New()
+		description := "Science book description"
+
+		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
+			AddRow(bookID, "Science Grade 2", &description, "2024", nil, nil, nil, nil, nil, 75000.00, time.Now(), time.Now())
+
+		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" WHERE books.name ILIKE $1 OR books.description ILIKE $2 ORDER BY created_at DESC`)).
+			WithArgs("%Science%", "%Science%").
+			WillReturnRows(bookRows)
+
+		req := httptest.NewRequest("GET", "/books?search=Science", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["books"])
+	})
 }
 
 func TestGetBook(t *testing.T) {

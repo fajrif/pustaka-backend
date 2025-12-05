@@ -71,6 +71,58 @@ func TestGetAllCities(t *testing.T) {
 
 		assert.NotNil(t, response["cities"])
 	})
+
+	t.Run("Search filter by code", func(t *testing.T) {
+		db3, mock3, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db3)
+
+		cityID := uuid.New()
+
+		cityRows := sqlmock.NewRows([]string{"id", "code", "name", "created_at", "updated_at"}).
+			AddRow(cityID, "JKT", "Jakarta", time.Now(), time.Now())
+
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE cities.code ILIKE $1 OR cities.name ILIKE $2 ORDER BY created_at DESC`)).
+			WithArgs("%JKT%", "%JKT%").
+			WillReturnRows(cityRows)
+
+		req := httptest.NewRequest("GET", "/cities?search=JKT", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["cities"])
+	})
+
+	t.Run("Search filter by name", func(t *testing.T) {
+		db4, mock4, err := testutil.SetupMockDB()
+		assert.NoError(t, err)
+		defer testutil.CloseMockDB(db4)
+
+		cityID := uuid.New()
+
+		cityRows := sqlmock.NewRows([]string{"id", "code", "name", "created_at", "updated_at"}).
+			AddRow(cityID, "JKT", "Jakarta", time.Now(), time.Now())
+
+		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE cities.code ILIKE $1 OR cities.name ILIKE $2 ORDER BY created_at DESC`)).
+			WithArgs("%Jakarta%", "%Jakarta%").
+			WillReturnRows(cityRows)
+
+		req := httptest.NewRequest("GET", "/cities?search=Jakarta", nil)
+		resp, _ := app.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.NotNil(t, response["cities"])
+	})
 }
 
 func TestGetCity(t *testing.T) {

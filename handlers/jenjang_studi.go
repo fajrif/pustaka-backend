@@ -13,6 +13,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param search query string false "Search by code, name, or description"
 // @Success 200 {object} map[string]interface{} "List of all jenjang studi"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -20,6 +21,15 @@ import (
 func GetAllJenjangStudi(c *fiber.Ctx) error {
 	var jenjangStudi []models.JenjangStudi
 	query := config.DB.Order("created_at DESC")
+
+	// Filter search
+	if searchQuery := c.Query("search"); searchQuery != "" {
+		// Wrap string search with wildcard SQL LIKE
+		searchTerm := "%" + searchQuery + "%"
+
+		query = query.
+			Where("jenjang_studi.code ILIKE ? OR jenjang_studi.name ILIKE ? OR jenjang_studi.description ILIKE ?", searchTerm, searchTerm, searchTerm)
+	}
 
 	if err := query.Find(&jenjangStudi).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
