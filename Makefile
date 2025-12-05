@@ -1,6 +1,7 @@
 .PHONY: help install run build test clean dev
 .PHONY: db-create db-drop db-migrate db-setup db-reset db-rollback db-status db-version db-console db-info
 .PHONY: migrate migrate-status migrate-rollback migrate-create build-migrate
+.PHONY: seed seed-all seed-jenis-buku seed-list seed-rebuild build-seed
 .PHONY: swagger swagger-init swagger-update
 
 # Load .env file if it exists
@@ -12,7 +13,7 @@ endif
 # Default target
 help:
 	@echo "=========================================="
-	@echo "  Merk Buku API - Makefile Commands"
+	@echo "  PustakaDB API - Makefile Commands"
 	@echo "=========================================="
 	@echo ""
 	@echo "📦 Application Commands:"
@@ -39,7 +40,13 @@ help:
 	@echo "  make migrate          - Same as db-migrate"
 	@echo "  make migrate-status   - Same as db-status"
 	@echo "  make migrate-rollback - Same as db-rollback"
-	@echo "  make migrate-create   - Create new migration file"
+	@echo "  make migrate-create NAME=<name> - Create new migration file"
+	@echo ""
+	@echo "🌱 Database Seeding Commands:"
+	@echo "  make seed             - Run all seeders"
+	@echo "  make seed NAME=<seeder> - Run specific seeder (e.g., NAME=jenis_buku)"
+	@echo "  make seed-list        - List available seeders"
+	@echo "  make seed-rebuild     - Rebuild seed tool"
 	@echo ""
 	@echo "📚 Swagger Documentation Commands:"
 	@echo "  make swagger          - Generate Swagger documentation"
@@ -49,6 +56,9 @@ help:
 	@echo "💡 Examples:"
 	@echo "  make db-setup                      # First time setup"
 	@echo "  make db-migrate                    # Run migrations"
+	@echo "  make migrate-create NAME=add_users # Create new migration"
+	@echo "  make seed                          # Run all seeders"
+	@echo "  make seed NAME=jenis_buku          # Run specific seeder"
 	@echo "  make db-drop db-create db-migrate  # Full reset"
 	@echo "  make db-reset                      # Full reset (one command)"
 	@echo ""
@@ -150,7 +160,37 @@ migrate-rollback: db-rollback
 
 migrate-create:
 	@chmod +x migrate.sh
-	@./migrate.sh create
+	@if [ -z "$(NAME)" ]; then \
+		echo "Error: Migration name is required"; \
+		echo "Usage: make migrate-create NAME=migration_name"; \
+		echo "Example: make migrate-create NAME=insert_jenis_buku_data"; \
+		exit 1; \
+	fi
+	@./migrate.sh create $(NAME)
+
+# ============================================================================
+# Database Seeding Commands
+# ============================================================================
+
+seed:
+	@chmod +x seed.sh
+	@if [ -z "$(NAME)" ]; then \
+		./seed.sh all; \
+	else \
+		./seed.sh $(NAME); \
+	fi
+
+seed-all:
+	@chmod +x seed.sh
+	@./seed.sh all
+
+seed-list:
+	@chmod +x seed.sh
+	@./seed.sh list
+
+seed-rebuild:
+	@chmod +x seed.sh
+	@./seed.sh rebuild
 
 # ============================================================================
 # Build Tools
@@ -161,6 +201,12 @@ build-migrate:
 	mkdir -p bin
 	go build -o bin/migrate migrate.go
 	@echo "✓ Migration tool built: bin/migrate"
+
+build-seed:
+	@echo "🔨 Building seed tool..."
+	mkdir -p bin
+	go build -o bin/seed seed.go
+	@echo "✓ Seed tool built: bin/seed"
 
 # ============================================================================
 # Swagger Documentation

@@ -12,9 +12,10 @@ type PaginationParams struct {
 }
 
 type PaginationMeta struct {
-	Page  int   `json:"page"`
-	Limit int   `json:"limit"`
-	Total int64 `json:"total"`
+	Page       int   `json:"page"`
+	Limit      int   `json:"limit"`
+	Total      int64 `json:"total"`
+	TotalPages int   `json:"total_pages"`
 }
 
 // GetPaginationParams extracts and validates pagination parameters from the request
@@ -48,12 +49,19 @@ func CreatePaginationResponse(queryCount *gorm.DB, data interface{}, key string,
 		return nil, err
 	}
 
+	// Calculate total pages (ceiling division)
+	totalPages := 0
+	if total > 0 && limit > 0 {
+		totalPages = int((total + int64(limit) - 1) / int64(limit))
+	}
+
 	return fiber.Map{
 		key: data,
 		"pagination": PaginationMeta{
-			Page:  page,
-			Limit: limit,
-			Total: total,
+			Page:       page,
+			Limit:      limit,
+			Total:      total,
+			TotalPages: totalPages,
 		},
 	}, nil
 }
