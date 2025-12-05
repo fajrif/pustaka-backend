@@ -13,14 +13,14 @@ import (
 )
 
 type LoginRequest struct {
-    Email    string `json:"email"`
-    Password string `json:"password"`
+    Email    string `json:"email" example:"user@example.com"`
+    Password string `json:"password" example:"password123"`
 }
 
 type RegisterRequest struct {
-    Email    string `json:"email"`
-    Password string `json:"password"`
-    FullName string `json:"full_name"`
+    Email    string `json:"email" example:"user@example.com"`
+    Password string `json:"password" example:"password123"`
+    FullName string `json:"full_name" example:"John Doe"`
 }
 
 type Claims struct {
@@ -30,6 +30,18 @@ type Claims struct {
     jwt.RegisteredClaims
 }
 
+// Register godoc
+// @Summary Register a new user
+// @Description Register a new user account with email, password, and full name
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body RegisterRequest true "Registration details"
+// @Success 201 {object} map[string]interface{} "User registered successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 409 {object} map[string]interface{} "Email already exists"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/auth/register [post]
 func Register(c *fiber.Ctx) error {
     var req RegisterRequest
     if err := c.BodyParser(&req); err != nil {
@@ -79,6 +91,18 @@ func Register(c *fiber.Ctx) error {
     })
 }
 
+// Login godoc
+// @Summary User login
+// @Description Authenticate user and return JWT token
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body LoginRequest true "Login credentials"
+// @Success 200 {object} map[string]interface{} "Login successful with token and user data"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 401 {object} map[string]interface{} "Invalid email or password"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/auth/login [post]
 func Login(c *fiber.Ctx) error {
     var req LoginRequest
     if err := c.BodyParser(&req); err != nil {
@@ -137,6 +161,17 @@ func Login(c *fiber.Ctx) error {
     })
 }
 
+// GetMe godoc
+// @Summary Get current user profile
+// @Description Get authenticated user's profile information
+// @Tags User
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} models.User "User profile data"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Router /api/me [get]
 func GetMe(c *fiber.Ctx) error {
     userID := c.Locals("userID").(string)
 
@@ -157,6 +192,20 @@ func GetMe(c *fiber.Ctx) error {
     })
 }
 
+// UpdateMe godoc
+// @Summary Update current user profile
+// @Description Update authenticated user's profile information (full_name only)
+// @Tags User
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body map[string]interface{} true "Update data (e.g., full_name)"
+// @Success 200 {object} models.User "Updated user profile"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/me [put]
 func UpdateMe(c *fiber.Ctx) error {
     userID := c.Locals("userID").(string)
 

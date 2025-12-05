@@ -6,6 +6,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// GetAllBidangStudi godoc
+// @Summary Get all bidang studi
+// @Description Retrieve all fields of study (bidang studi) ordered by creation date
+// @Tags BidangStudi
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "List of all bidang studi"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/bidang-studi [get]
 func GetAllBidangStudi(c *fiber.Ctx) error {
 	var bidangStudi []models.BidangStudi
 	query := config.DB.Order("created_at DESC")
@@ -21,6 +32,18 @@ func GetAllBidangStudi(c *fiber.Ctx) error {
 	})
 }
 
+// GetBidangStudi godoc
+// @Summary Get a bidang studi by ID
+// @Description Retrieve a single field of study by its ID
+// @Tags BidangStudi
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "BidangStudi ID (UUID)"
+// @Success 200 {object} map[string]interface{} "BidangStudi details"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "BidangStudi not found"
+// @Router /api/bidang-studi/{id} [get]
 func GetBidangStudi(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -36,6 +59,19 @@ func GetBidangStudi(c *fiber.Ctx) error {
 	})
 }
 
+// CreateBidangStudi godoc
+// @Summary Create a new bidang studi
+// @Description Create a new field of study entry
+// @Tags BidangStudi
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body models.BidangStudi true "BidangStudi details"
+// @Success 201 {object} models.BidangStudi "Created bidang studi"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/bidang-studi [post]
 func CreateBidangStudi(c *fiber.Ctx) error {
 	var bidangStudi models.BidangStudi
 	if err := c.BodyParser(&bidangStudi); err != nil {
@@ -53,6 +89,21 @@ func CreateBidangStudi(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(bidangStudi)
 }
 
+// UpdateBidangStudi godoc
+// @Summary Update a bidang studi
+// @Description Update an existing field of study by ID
+// @Tags BidangStudi
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "BidangStudi ID (UUID)"
+// @Param request body models.BidangStudi true "Updated bidang studi details"
+// @Success 200 {object} models.BidangStudi "Updated bidang studi"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "BidangStudi not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/bidang-studi/{id} [put]
 func UpdateBidangStudi(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -78,6 +129,19 @@ func UpdateBidangStudi(c *fiber.Ctx) error {
 	return c.JSON(bidangStudi)
 }
 
+// DeleteBidangStudi godoc
+// @Summary Delete a bidang studi
+// @Description Delete a field of study by ID
+// @Tags BidangStudi
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "BidangStudi ID (UUID)"
+// @Success 200 {object} map[string]interface{} "BidangStudi deleted successfully"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "BidangStudi not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/bidang-studi/{id} [delete]
 func DeleteBidangStudi(c *fiber.Ctx) error {
 	id := c.Params("id")
 

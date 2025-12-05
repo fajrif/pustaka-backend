@@ -6,12 +6,34 @@ import (
     "log"
     "os"
 
+    _ "pustaka-backend/docs"
+
     "github.com/gofiber/fiber/v2"
     "github.com/gofiber/fiber/v2/middleware/cors"
     "github.com/gofiber/fiber/v2/middleware/logger"
     "github.com/gofiber/fiber/v2/middleware/recover"
     "github.com/joho/godotenv"
 )
+
+// @title Pustaka Digital Backend API
+// @version 1.0
+// @description REST API for Pustaka Digital Library Management System
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.email support@pustaka.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /
+// @schemes http https
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
     // Load environment variables

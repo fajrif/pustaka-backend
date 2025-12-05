@@ -9,6 +9,17 @@ import (
 	"github.com/google/uuid"
 )
 
+// GetAllMerkBuku godoc
+// @Summary Get all merk buku
+// @Description Retrieve all book brands (merk buku) ordered by creation date
+// @Tags MerkBuku
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "List of all merk buku"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/merk-buku [get]
 func GetAllMerkBuku(c *fiber.Ctx) error {
     var all_merk_buku []models.MerkBuku
     query := config.DB.Order("created_at DESC")
@@ -27,6 +38,18 @@ func GetAllMerkBuku(c *fiber.Ctx) error {
     })
 }
 
+// GetMerkBuku godoc
+// @Summary Get a merk buku by ID
+// @Description Retrieve a single book brand by its ID
+// @Tags MerkBuku
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "MerkBuku ID (UUID)"
+// @Success 200 {object} map[string]interface{} "MerkBuku details"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "MerkBuku not found"
+// @Router /api/merk-buku/{id} [get]
 func GetMerkBuku(c *fiber.Ctx) error {
     id := c.Params("id")
     query := config.DB
@@ -45,6 +68,19 @@ func GetMerkBuku(c *fiber.Ctx) error {
     })
 }
 
+// CreateMerkBuku godoc
+// @Summary Create a new merk buku
+// @Description Create a new book brand
+// @Tags MerkBuku
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body models.MerkBuku true "MerkBuku details"
+// @Success 201 {object} models.MerkBuku "Created merk buku"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/merk-buku [post]
 func CreateMerkBuku(c *fiber.Ctx) error {
     var merk_buku models.MerkBuku
     if err := c.BodyParser(&merk_buku); err != nil {
@@ -73,6 +109,21 @@ func CreateMerkBuku(c *fiber.Ctx) error {
     return c.Status(fiber.StatusCreated).JSON(merk_buku)
 }
 
+// UpdateMerkBuku godoc
+// @Summary Update a merk buku
+// @Description Update an existing book brand by ID
+// @Tags MerkBuku
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "MerkBuku ID (UUID)"
+// @Param request body models.MerkBuku true "Updated merk buku details"
+// @Success 200 {object} models.MerkBuku "Updated merk buku"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "MerkBuku not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/merk-buku/{id} [put]
 func UpdateMerkBuku(c *fiber.Ctx) error {
     id := c.Params("id")
 
@@ -109,6 +160,19 @@ func UpdateMerkBuku(c *fiber.Ctx) error {
     return c.JSON(merk_buku)
 }
 
+// DeleteMerkBuku godoc
+// @Summary Delete a merk buku
+// @Description Delete a book brand by ID
+// @Tags MerkBuku
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "MerkBuku ID (UUID)"
+// @Success 200 {object} map[string]interface{} "MerkBuku deleted successfully"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "MerkBuku not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/merk-buku/{id} [delete]
 func DeleteMerkBuku(c *fiber.Ctx) error {
     id := c.Params("id")
 

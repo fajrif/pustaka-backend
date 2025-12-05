@@ -4,9 +4,14 @@ import (
     "pustaka-backend/handlers"
     "pustaka-backend/middleware"
     "github.com/gofiber/fiber/v2"
+
+    fiberSwagger "github.com/swaggo/fiber-swagger"
 )
 
 func Setup(app *fiber.App) {
+    // Swagger documentation route
+    app.Get("/swagger/*", fiberSwagger.WrapHandler)
+
     api := app.Group("/api")
 
     // Public routes

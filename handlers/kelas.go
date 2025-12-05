@@ -6,6 +6,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// GetAllKelas godoc
+// @Summary Get all kelas
+// @Description Retrieve all classes (kelas) ordered by creation date
+// @Tags Kelas
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "List of all kelas"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/kelas [get]
 func GetAllKelas(c *fiber.Ctx) error {
 	var kelas []models.Kelas
 	query := config.DB.Order("created_at DESC")
@@ -21,6 +32,18 @@ func GetAllKelas(c *fiber.Ctx) error {
 	})
 }
 
+// GetKelas godoc
+// @Summary Get a kelas by ID
+// @Description Retrieve a single class by its ID
+// @Tags Kelas
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Kelas ID (UUID)"
+// @Success 200 {object} map[string]interface{} "Kelas details"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "Kelas not found"
+// @Router /api/kelas/{id} [get]
 func GetKelas(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -36,6 +59,19 @@ func GetKelas(c *fiber.Ctx) error {
 	})
 }
 
+// CreateKelas godoc
+// @Summary Create a new kelas
+// @Description Create a new class entry
+// @Tags Kelas
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body models.Kelas true "Kelas details"
+// @Success 201 {object} models.Kelas "Created kelas"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/kelas [post]
 func CreateKelas(c *fiber.Ctx) error {
 	var kelas models.Kelas
 	if err := c.BodyParser(&kelas); err != nil {
@@ -53,6 +89,21 @@ func CreateKelas(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(kelas)
 }
 
+// UpdateKelas godoc
+// @Summary Update a kelas
+// @Description Update an existing class by ID
+// @Tags Kelas
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Kelas ID (UUID)"
+// @Param request body models.Kelas true "Updated kelas details"
+// @Success 200 {object} models.Kelas "Updated kelas"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "Kelas not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/kelas/{id} [put]
 func UpdateKelas(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -78,6 +129,19 @@ func UpdateKelas(c *fiber.Ctx) error {
 	return c.JSON(kelas)
 }
 
+// DeleteKelas godoc
+// @Summary Delete a kelas
+// @Description Delete a class by ID
+// @Tags Kelas
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Kelas ID (UUID)"
+// @Success 200 {object} map[string]interface{} "Kelas deleted successfully"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "Kelas not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/kelas/{id} [delete]
 func DeleteKelas(c *fiber.Ctx) error {
 	id := c.Params("id")
 

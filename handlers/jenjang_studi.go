@@ -6,6 +6,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// GetAllJenjangStudi godoc
+// @Summary Get all jenjang studi
+// @Description Retrieve all education levels (jenjang studi) ordered by creation date
+// @Tags JenjangStudi
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "List of all jenjang studi"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/jenjang-studi [get]
 func GetAllJenjangStudi(c *fiber.Ctx) error {
 	var jenjangStudi []models.JenjangStudi
 	query := config.DB.Order("created_at DESC")
@@ -21,6 +32,18 @@ func GetAllJenjangStudi(c *fiber.Ctx) error {
 	})
 }
 
+// GetJenjangStudi godoc
+// @Summary Get a jenjang studi by ID
+// @Description Retrieve a single education level by its ID
+// @Tags JenjangStudi
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "JenjangStudi ID (UUID)"
+// @Success 200 {object} map[string]interface{} "JenjangStudi details"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "JenjangStudi not found"
+// @Router /api/jenjang-studi/{id} [get]
 func GetJenjangStudi(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -36,6 +59,19 @@ func GetJenjangStudi(c *fiber.Ctx) error {
 	})
 }
 
+// CreateJenjangStudi godoc
+// @Summary Create a new jenjang studi
+// @Description Create a new education level entry
+// @Tags JenjangStudi
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body models.JenjangStudi true "JenjangStudi details"
+// @Success 201 {object} models.JenjangStudi "Created jenjang studi"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/jenjang-studi [post]
 func CreateJenjangStudi(c *fiber.Ctx) error {
 	var jenjangStudi models.JenjangStudi
 	if err := c.BodyParser(&jenjangStudi); err != nil {
@@ -60,6 +96,21 @@ func CreateJenjangStudi(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(jenjangStudi)
 }
 
+// UpdateJenjangStudi godoc
+// @Summary Update a jenjang studi
+// @Description Update an existing education level by ID
+// @Tags JenjangStudi
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "JenjangStudi ID (UUID)"
+// @Param request body models.JenjangStudi true "Updated jenjang studi details"
+// @Success 200 {object} models.JenjangStudi "Updated jenjang studi"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "JenjangStudi not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/jenjang-studi/{id} [put]
 func UpdateJenjangStudi(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -92,6 +143,19 @@ func UpdateJenjangStudi(c *fiber.Ctx) error {
 	return c.JSON(jenjangStudi)
 }
 
+// DeleteJenjangStudi godoc
+// @Summary Delete a jenjang studi
+// @Description Delete an education level by ID
+// @Tags JenjangStudi
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "JenjangStudi ID (UUID)"
+// @Success 200 {object} map[string]interface{} "JenjangStudi deleted successfully"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "JenjangStudi not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/jenjang-studi/{id} [delete]
 func DeleteJenjangStudi(c *fiber.Ctx) error {
 	id := c.Params("id")
 

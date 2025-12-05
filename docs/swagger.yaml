@@ -1,0 +1,2300 @@
+basePath: /
+definitions:
+  handlers.LoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    type: object
+  handlers.RegisterRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      full_name:
+        example: John Doe
+        type: string
+      password:
+        example: password123
+        type: string
+    type: object
+  models.BidangStudi:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Book:
+    properties:
+      bidang_studi:
+        $ref: '#/definitions/models.BidangStudi'
+      bidang_studi_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      jenis_buku:
+        $ref: '#/definitions/models.JenisBuku'
+      jenis_buku_id:
+        type: string
+      jenjang_studi:
+        $ref: '#/definitions/models.JenjangStudi'
+      jenjang_studi_id:
+        type: string
+      kelas:
+        $ref: '#/definitions/models.Kelas'
+      kelas_id:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      publisher:
+        $ref: '#/definitions/models.Publisher'
+      publisher_id:
+        type: string
+      updated_at:
+        type: string
+      year:
+        type: string
+    type: object
+  models.City:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Expedition:
+    properties:
+      address:
+        type: string
+      area:
+        type: string
+      city:
+        $ref: '#/definitions/models.City'
+      city_id:
+        type: string
+      code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      phone1:
+        type: string
+      phone2:
+        type: string
+      updated_at:
+        type: string
+      website:
+        type: string
+    type: object
+  models.JenisBuku:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.JenjangStudi:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      period:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Kelas:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.MerkBuku:
+    properties:
+      bantuan_promosi:
+        type: integer
+      id:
+        type: string
+      kode_merk:
+        type: string
+      nama_merk:
+        type: string
+      tstamp:
+        type: string
+      user_details:
+        $ref: '#/definitions/models.User'
+      user_id:
+        type: string
+    type: object
+  models.Publisher:
+    properties:
+      address:
+        type: string
+      area:
+        type: string
+      city:
+        $ref: '#/definitions/models.City'
+      city_id:
+        type: string
+      code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      phone1:
+        type: string
+      phone2:
+        type: string
+      updated_at:
+        type: string
+      website:
+        type: string
+    type: object
+  models.SalesAssociate:
+    properties:
+      address:
+        type: string
+      area:
+        type: string
+      city:
+        $ref: '#/definitions/models.City'
+      city_id:
+        type: string
+      code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      discount:
+        type: number
+      email:
+        type: string
+      end_join_date:
+        type: string
+      id:
+        type: string
+      jenis_pembayaran:
+        type: string
+      join_date:
+        type: string
+      name:
+        type: string
+      phone1:
+        type: string
+      phone2:
+        type: string
+      updated_at:
+        type: string
+      website:
+        type: string
+    type: object
+  models.User:
+    properties:
+      created_date:
+        type: string
+      email:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: string
+      role:
+        type: string
+      updated_date:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@pustaka.com
+    name: API Support
+  description: REST API for Pustaka Digital Library Management System
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Pustaka Digital Backend API
+  version: "1.0"
+paths:
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful with token and user data
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid email or password
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: User login
+      tags:
+      - Authentication
+  /api/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account with email, password, and full name
+      parameters:
+      - description: Registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Email already exists
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register a new user
+      tags:
+      - Authentication
+  /api/bidang-studi:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all fields of study (bidang studi) ordered by creation
+        date
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all bidang studi
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all bidang studi
+      tags:
+      - BidangStudi
+    post:
+      consumes:
+      - application/json
+      description: Create a new field of study entry
+      parameters:
+      - description: BidangStudi details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.BidangStudi'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created bidang studi
+          schema:
+            $ref: '#/definitions/models.BidangStudi'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new bidang studi
+      tags:
+      - BidangStudi
+  /api/bidang-studi/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a field of study by ID
+      parameters:
+      - description: BidangStudi ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: BidangStudi deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: BidangStudi not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a bidang studi
+      tags:
+      - BidangStudi
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single field of study by its ID
+      parameters:
+      - description: BidangStudi ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: BidangStudi details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: BidangStudi not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a bidang studi by ID
+      tags:
+      - BidangStudi
+    put:
+      consumes:
+      - application/json
+      description: Update an existing field of study by ID
+      parameters:
+      - description: BidangStudi ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated bidang studi details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.BidangStudi'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated bidang studi
+          schema:
+            $ref: '#/definitions/models.BidangStudi'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: BidangStudi not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a bidang studi
+      tags:
+      - BidangStudi
+  /api/books:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all books with their related entities
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all books
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all books
+      tags:
+      - Books
+    post:
+      consumes:
+      - application/json
+      description: Create a new book entry
+      parameters:
+      - description: Book details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Book'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created book
+          schema:
+            $ref: '#/definitions/models.Book'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new book
+      tags:
+      - Books
+  /api/books/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a book by ID
+      parameters:
+      - description: Book ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Book deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Book not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a book
+      tags:
+      - Books
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single book by its ID with all related entities
+      parameters:
+      - description: Book ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Book details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Book not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a book by ID
+      tags:
+      - Books
+    put:
+      consumes:
+      - application/json
+      description: Update an existing book by ID
+      parameters:
+      - description: Book ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated book details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Book'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated book
+          schema:
+            $ref: '#/definitions/models.Book'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Book not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a book
+      tags:
+      - Books
+  /api/cities:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all cities ordered by creation date
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all cities
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all cities
+      tags:
+      - Cities
+    post:
+      consumes:
+      - application/json
+      description: Create a new city entry
+      parameters:
+      - description: City details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.City'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created city
+          schema:
+            $ref: '#/definitions/models.City'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new city
+      tags:
+      - Cities
+  /api/cities/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a city by ID
+      parameters:
+      - description: City ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: City deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: City not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a city
+      tags:
+      - Cities
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single city by its ID
+      parameters:
+      - description: City ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: City details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: City not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a city by ID
+      tags:
+      - Cities
+    put:
+      consumes:
+      - application/json
+      description: Update an existing city by ID
+      parameters:
+      - description: City ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated city details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.City'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated city
+          schema:
+            $ref: '#/definitions/models.City'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: City not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a city
+      tags:
+      - Cities
+  /api/expeditions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all expeditions with their related city information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all expeditions
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all expeditions
+      tags:
+      - Expeditions
+    post:
+      consumes:
+      - application/json
+      description: Create a new expedition entry
+      parameters:
+      - description: Expedition details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Expedition'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created expedition
+          schema:
+            $ref: '#/definitions/models.Expedition'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new expedition
+      tags:
+      - Expeditions
+  /api/expeditions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an expedition by ID
+      parameters:
+      - description: Expedition ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Expedition deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Expedition not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete an expedition
+      tags:
+      - Expeditions
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single expedition by its ID with related city information
+      parameters:
+      - description: Expedition ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Expedition details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Expedition not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get an expedition by ID
+      tags:
+      - Expeditions
+    put:
+      consumes:
+      - application/json
+      description: Update an existing expedition by ID
+      parameters:
+      - description: Expedition ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated expedition details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Expedition'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated expedition
+          schema:
+            $ref: '#/definitions/models.Expedition'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Expedition not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update an expedition
+      tags:
+      - Expeditions
+  /api/jenis-buku:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all book types (jenis buku) ordered by creation date
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all jenis buku
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all jenis buku
+      tags:
+      - JenisBuku
+    post:
+      consumes:
+      - application/json
+      description: Create a new book type entry
+      parameters:
+      - description: JenisBuku details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.JenisBuku'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created jenis buku
+          schema:
+            $ref: '#/definitions/models.JenisBuku'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new jenis buku
+      tags:
+      - JenisBuku
+  /api/jenis-buku/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a book type by ID
+      parameters:
+      - description: JenisBuku ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JenisBuku deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: JenisBuku not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a jenis buku
+      tags:
+      - JenisBuku
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single book type by its ID
+      parameters:
+      - description: JenisBuku ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JenisBuku details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: JenisBuku not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a jenis buku by ID
+      tags:
+      - JenisBuku
+    put:
+      consumes:
+      - application/json
+      description: Update an existing book type by ID
+      parameters:
+      - description: JenisBuku ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated jenis buku details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.JenisBuku'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated jenis buku
+          schema:
+            $ref: '#/definitions/models.JenisBuku'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: JenisBuku not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a jenis buku
+      tags:
+      - JenisBuku
+  /api/jenjang-studi:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all education levels (jenjang studi) ordered by creation
+        date
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all jenjang studi
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all jenjang studi
+      tags:
+      - JenjangStudi
+    post:
+      consumes:
+      - application/json
+      description: Create a new education level entry
+      parameters:
+      - description: JenjangStudi details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.JenjangStudi'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created jenjang studi
+          schema:
+            $ref: '#/definitions/models.JenjangStudi'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new jenjang studi
+      tags:
+      - JenjangStudi
+  /api/jenjang-studi/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an education level by ID
+      parameters:
+      - description: JenjangStudi ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JenjangStudi deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: JenjangStudi not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a jenjang studi
+      tags:
+      - JenjangStudi
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single education level by its ID
+      parameters:
+      - description: JenjangStudi ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JenjangStudi details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: JenjangStudi not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a jenjang studi by ID
+      tags:
+      - JenjangStudi
+    put:
+      consumes:
+      - application/json
+      description: Update an existing education level by ID
+      parameters:
+      - description: JenjangStudi ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated jenjang studi details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.JenjangStudi'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated jenjang studi
+          schema:
+            $ref: '#/definitions/models.JenjangStudi'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: JenjangStudi not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a jenjang studi
+      tags:
+      - JenjangStudi
+  /api/kelas:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all classes (kelas) ordered by creation date
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all kelas
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all kelas
+      tags:
+      - Kelas
+    post:
+      consumes:
+      - application/json
+      description: Create a new class entry
+      parameters:
+      - description: Kelas details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Kelas'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created kelas
+          schema:
+            $ref: '#/definitions/models.Kelas'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new kelas
+      tags:
+      - Kelas
+  /api/kelas/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a class by ID
+      parameters:
+      - description: Kelas ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Kelas deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Kelas not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a kelas
+      tags:
+      - Kelas
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single class by its ID
+      parameters:
+      - description: Kelas ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Kelas details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Kelas not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a kelas by ID
+      tags:
+      - Kelas
+    put:
+      consumes:
+      - application/json
+      description: Update an existing class by ID
+      parameters:
+      - description: Kelas ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated kelas details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Kelas'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated kelas
+          schema:
+            $ref: '#/definitions/models.Kelas'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Kelas not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a kelas
+      tags:
+      - Kelas
+  /api/me:
+    get:
+      consumes:
+      - application/json
+      description: Get authenticated user's profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile data
+          schema:
+            $ref: '#/definitions/models.User'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      description: Update authenticated user's profile information (full_name only)
+      parameters:
+      - description: Update data (e.g., full_name)
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated user profile
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update current user profile
+      tags:
+      - User
+  /api/merk-buku:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all book brands (merk buku) ordered by creation date
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all merk buku
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all merk buku
+      tags:
+      - MerkBuku
+    post:
+      consumes:
+      - application/json
+      description: Create a new book brand
+      parameters:
+      - description: MerkBuku details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.MerkBuku'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created merk buku
+          schema:
+            $ref: '#/definitions/models.MerkBuku'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new merk buku
+      tags:
+      - MerkBuku
+  /api/merk-buku/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a book brand by ID
+      parameters:
+      - description: MerkBuku ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: MerkBuku deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: MerkBuku not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a merk buku
+      tags:
+      - MerkBuku
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single book brand by its ID
+      parameters:
+      - description: MerkBuku ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: MerkBuku details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: MerkBuku not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a merk buku by ID
+      tags:
+      - MerkBuku
+    put:
+      consumes:
+      - application/json
+      description: Update an existing book brand by ID
+      parameters:
+      - description: MerkBuku ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated merk buku details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.MerkBuku'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated merk buku
+          schema:
+            $ref: '#/definitions/models.MerkBuku'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: MerkBuku not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a merk buku
+      tags:
+      - MerkBuku
+  /api/publishers:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all publishers with their related city information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all publishers
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all publishers
+      tags:
+      - Publishers
+    post:
+      consumes:
+      - application/json
+      description: Create a new publisher entry
+      parameters:
+      - description: Publisher details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Publisher'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created publisher
+          schema:
+            $ref: '#/definitions/models.Publisher'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new publisher
+      tags:
+      - Publishers
+  /api/publishers/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a publisher by ID
+      parameters:
+      - description: Publisher ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Publisher deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Publisher not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a publisher
+      tags:
+      - Publishers
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single publisher by its ID with related city information
+      parameters:
+      - description: Publisher ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Publisher details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Publisher not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a publisher by ID
+      tags:
+      - Publishers
+    put:
+      consumes:
+      - application/json
+      description: Update an existing publisher by ID
+      parameters:
+      - description: Publisher ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated publisher details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Publisher'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated publisher
+          schema:
+            $ref: '#/definitions/models.Publisher'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Publisher not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a publisher
+      tags:
+      - Publishers
+  /api/sales-associates:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all sales associates with their related city information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all sales associates
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all sales associates
+      tags:
+      - SalesAssociates
+    post:
+      consumes:
+      - application/json
+      description: Create a new sales associate entry
+      parameters:
+      - description: SalesAssociate details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.SalesAssociate'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created sales associate
+          schema:
+            $ref: '#/definitions/models.SalesAssociate'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new sales associate
+      tags:
+      - SalesAssociates
+  /api/sales-associates/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a sales associate by ID
+      parameters:
+      - description: SalesAssociate ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: SalesAssociate deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: SalesAssociate not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a sales associate
+      tags:
+      - SalesAssociates
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single sales associate by its ID with related city information
+      parameters:
+      - description: SalesAssociate ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: SalesAssociate details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: SalesAssociate not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a sales associate by ID
+      tags:
+      - SalesAssociates
+    put:
+      consumes:
+      - application/json
+      description: Update an existing sales associate by ID
+      parameters:
+      - description: SalesAssociate ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated sales associate details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.SalesAssociate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated sales associate
+          schema:
+            $ref: '#/definitions/models.SalesAssociate'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: SalesAssociate not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a sales associate
+      tags:
+      - SalesAssociates
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

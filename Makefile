@@ -1,6 +1,7 @@
 .PHONY: help install run build test clean dev
 .PHONY: db-create db-drop db-migrate db-setup db-reset db-rollback db-status db-version db-console db-info
 .PHONY: migrate migrate-status migrate-rollback migrate-create build-migrate
+.PHONY: swagger swagger-init swagger-update
 
 # Load .env file if it exists
 ifneq (,$(wildcard ./.env))
@@ -39,6 +40,11 @@ help:
 	@echo "  make migrate-status   - Same as db-status"
 	@echo "  make migrate-rollback - Same as db-rollback"
 	@echo "  make migrate-create   - Create new migration file"
+	@echo ""
+	@echo "📚 Swagger Documentation Commands:"
+	@echo "  make swagger          - Generate Swagger documentation"
+	@echo "  make swagger-init     - Initialize Swagger (first time)"
+	@echo "  make swagger-update   - Update Swagger docs (alias)"
 	@echo ""
 	@echo "💡 Examples:"
 	@echo "  make db-setup                      # First time setup"
@@ -155,3 +161,21 @@ build-migrate:
 	mkdir -p bin
 	go build -o bin/migrate migrate.go
 	@echo "✓ Migration tool built: bin/migrate"
+
+# ============================================================================
+# Swagger Documentation
+# ============================================================================
+
+swagger:
+	@echo "📚 Generating Swagger documentation..."
+	@if ! command -v swag > /dev/null; then \
+		echo "Installing swag..."; \
+		go install github.com/swaggo/swag/cmd/swag@latest; \
+	fi
+	swag init -g main.go --output ./docs
+	@echo "✓ Swagger docs generated in ./docs"
+	@echo "📖 Access docs at: http://localhost:8080/swagger/index.html"
+
+swagger-init: swagger
+
+swagger-update: swagger

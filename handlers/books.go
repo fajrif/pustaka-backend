@@ -6,6 +6,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// GetAllBooks godoc
+// @Summary Get all books
+// @Description Retrieve all books with their related entities
+// @Tags Books
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "List of all books"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/books [get]
 func GetAllBooks(c *fiber.Ctx) error {
 	var books []models.Book
 	query := config.DB.Order("created_at DESC")
@@ -28,6 +39,18 @@ func GetAllBooks(c *fiber.Ctx) error {
 	})
 }
 
+// GetBook godoc
+// @Summary Get a book by ID
+// @Description Retrieve a single book by its ID with all related entities
+// @Tags Books
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Book ID (UUID)"
+// @Success 200 {object} map[string]interface{} "Book details"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "Book not found"
+// @Router /api/books/{id} [get]
 func GetBook(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -50,6 +73,19 @@ func GetBook(c *fiber.Ctx) error {
 	})
 }
 
+// CreateBook godoc
+// @Summary Create a new book
+// @Description Create a new book entry
+// @Tags Books
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body models.Book true "Book details"
+// @Success 201 {object} models.Book "Created book"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/books [post]
 func CreateBook(c *fiber.Ctx) error {
 	var book models.Book
 	if err := c.BodyParser(&book); err != nil {
@@ -67,6 +103,21 @@ func CreateBook(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(book)
 }
 
+// UpdateBook godoc
+// @Summary Update a book
+// @Description Update an existing book by ID
+// @Tags Books
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Book ID (UUID)"
+// @Param request body models.Book true "Updated book details"
+// @Success 200 {object} models.Book "Updated book"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "Book not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/books/{id} [put]
 func UpdateBook(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -92,6 +143,19 @@ func UpdateBook(c *fiber.Ctx) error {
 	return c.JSON(book)
 }
 
+// DeleteBook godoc
+// @Summary Delete a book
+// @Description Delete a book by ID
+// @Tags Books
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Book ID (UUID)"
+// @Success 200 {object} map[string]interface{} "Book deleted successfully"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "Book not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/books/{id} [delete]
 func DeleteBook(c *fiber.Ctx) error {
 	id := c.Params("id")
 
