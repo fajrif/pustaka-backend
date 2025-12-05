@@ -17,78 +17,11 @@ type LoginRequest struct {
     Password string `json:"password" example:"password123"`
 }
 
-type RegisterRequest struct {
-    Email    string `json:"email" example:"user@example.com"`
-    Password string `json:"password" example:"password123"`
-    FullName string `json:"full_name" example:"John Doe"`
-}
-
 type Claims struct {
     UserID string `json:"user_id"`
     Email  string `json:"email"`
     Role   string `json:"role"`
     jwt.RegisteredClaims
-}
-
-// Register godoc
-// @Summary Register a new user
-// @Description Register a new user account with email, password, and full name
-// @Tags Authentication
-// @Accept json
-// @Produce json
-// @Param request body RegisterRequest true "Registration details"
-// @Success 201 {object} map[string]interface{} "User registered successfully"
-// @Failure 400 {object} map[string]interface{} "Invalid request body"
-// @Failure 409 {object} map[string]interface{} "Email already exists"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /api/auth/register [post]
-func Register(c *fiber.Ctx) error {
-    var req RegisterRequest
-    if err := c.BodyParser(&req); err != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Invalid request body",
-        })
-    }
-
-    // Check if user exists
-    var existingUser models.User
-    if err := config.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
-        return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-            "error": "Email already exists",
-        })
-    }
-
-    // Hash password
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": "Failed to hash password",
-        })
-    }
-
-    // Create user
-    user := models.User{
-        Email:        req.Email,
-        PasswordHash: string(hashedPassword),
-        FullName:     req.FullName,
-        Role:         "user",
-    }
-
-    if err := config.DB.Create(&user).Error; err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": "Failed to create user",
-        })
-    }
-
-    return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-        "message": "User registered successfully",
-        "user": fiber.Map{
-            "id":        user.ID,
-            "email":     user.Email,
-            "full_name": user.FullName,
-            "role":      user.Role,
-        },
-    })
 }
 
 // Login godoc
@@ -192,15 +125,20 @@ func GetMe(c *fiber.Ctx) error {
     })
 }
 
+type UpdateMeRequest struct {
+    FullName string `json:"full_name,omitempty" example:"John Doe Updated"`
+    Password string `json:"password,omitempty" example:"newpassword123"`
+}
+
 // UpdateMe godoc
 // @Summary Update current user profile
-// @Description Update authenticated user's profile information (full_name only)
+// @Description Update authenticated user's profile information (full_name and password)
 // @Tags User
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body map[string]interface{} true "Update data (e.g., full_name)"
-// @Success 200 {object} models.User "Updated user profile"
+// @Param request body UpdateMeRequest true "Update data (full_name, password)"
+// @Success 200 {object} map[string]interface{} "Updated user profile"
 // @Failure 400 {object} map[string]interface{} "Invalid request body"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 404 {object} map[string]interface{} "User not found"
@@ -216,24 +154,41 @@ func UpdateMe(c *fiber.Ctx) error {
         })
     }
 
-    var updateData map[string]interface{}
-    if err := c.BodyParser(&updateData); err != nil {
+    var req UpdateMeRequest
+    if err := c.BodyParser(&req); err != nil {
         return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
             "error": "Invalid request body",
         })
     }
 
-    // Don't allow updating sensitive fields
-    delete(updateData, "id")
-    delete(updateData, "email")
-    delete(updateData, "password_hash")
-    delete(updateData, "role")
+    // Update full name if provided
+    if req.FullName != "" {
+        user.FullName = req.FullName
+    }
 
-    if err := config.DB.Model(&user).Updates(updateData).Error; err != nil {
+    // Update password if provided
+    if req.Password != "" {
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+        if err != nil {
+            return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+                "error": "Failed to hash password",
+            })
+        }
+        user.PasswordHash = string(hashedPassword)
+    }
+
+    if err := config.DB.Save(&user).Error; err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
             "error": "Failed to update user",
         })
     }
 
-    return c.JSON(user)
+    return c.JSON(fiber.Map{
+        "id":           user.ID,
+        "email":        user.Email,
+        "full_name":    user.FullName,
+        "role":         user.Role,
+        "created_date": user.CreatedAt,
+        "updated_date": user.UpdatedAt,
+    })
 }

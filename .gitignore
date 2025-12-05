@@ -11,6 +11,7 @@
 /app
 /app.bin
 *.test
+/bin/*
 
 # Go coverage files
 *.out

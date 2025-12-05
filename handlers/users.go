@@ -1,0 +1,347 @@
+package handlers
+
+import (
+	"pustaka-backend/config"
+	"pustaka-backend/helpers"
+	"pustaka-backend/models"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
+)
+
+type CreateUserRequest struct {
+	Email    string `json:"email" example:"admin@example.com"`
+	Password string `json:"password" example:"password123"`
+	FullName string `json:"full_name" example:"John Doe"`
+	Role     string `json:"role" example:"user"`
+}
+
+type UpdateUserRequest struct {
+	Email    string `json:"email,omitempty" example:"admin@example.com"`
+	Password string `json:"password,omitempty" example:"newpassword123"`
+	FullName string `json:"full_name,omitempty" example:"John Doe Updated"`
+	Role     string `json:"role,omitempty" example:"admin"`
+}
+
+// CreateUser godoc
+// @Summary Create a new user (Admin only)
+// @Description Create a new user with email, password, full name, and role. Only accessible by admin users.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body CreateUserRequest true "User creation details"
+// @Success 201 {object} map[string]interface{} "User created successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 403 {object} map[string]interface{} "Admin access required"
+// @Failure 409 {object} map[string]interface{} "Email already exists"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/users [post]
+func CreateUser(c *fiber.Ctx) error {
+	var req CreateUserRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	// Validate required fields
+	if req.Email == "" || req.Password == "" || req.FullName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Email, password, and full_name are required",
+		})
+	}
+
+	// Default role to 'user' if not specified
+	if req.Role == "" {
+		req.Role = "user"
+	}
+
+	// Validate role
+	if req.Role != "user" && req.Role != "admin" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Role must be either 'user' or 'admin'",
+		})
+	}
+
+	// Check if user exists
+	var existingUser models.User
+	if err := config.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"error": "Email already exists",
+		})
+	}
+
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to hash password",
+		})
+	}
+
+	// Create user
+	user := models.User{
+		Email:        req.Email,
+		PasswordHash: string(hashedPassword),
+		FullName:     req.FullName,
+		Role:         req.Role,
+	}
+
+	if err := config.DB.Create(&user).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create user",
+		})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "User created successfully",
+		"user": fiber.Map{
+			"id":           user.ID,
+			"email":        user.Email,
+			"full_name":    user.FullName,
+			"role":         user.Role,
+			"created_date": user.CreatedAt,
+			"updated_date": user.UpdatedAt,
+		},
+	})
+}
+
+// GetAllUsers godoc
+// @Summary Get all users (Admin only)
+// @Description Retrieve all users with pagination and optional search filter. Only accessible by admin users.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 20)"
+// @Param search query string false "Search by email, full name"
+// @Success 200 {object} map[string]interface{} "List of users with pagination"
+// @Failure 403 {object} map[string]interface{} "Admin access required"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/users [get]
+func GetAllUsers(c *fiber.Ctx) error {
+	pagination := helpers.GetPaginationParams(c)
+
+	query := config.DB.Model(&models.User{})
+
+	// Filter search
+	if searchQuery := c.Query("search"); searchQuery != "" {
+		searchTerm := "%" + searchQuery + "%"
+		query = query.Where("email ILIKE ? OR full_name ILIKE ?", searchTerm, searchTerm)
+	}
+
+	// Create a separate query for counting
+	queryCount := config.DB.Model(&models.User{})
+	if searchQuery := c.Query("search"); searchQuery != "" {
+		searchTerm := "%" + searchQuery + "%"
+		queryCount = queryCount.Where("email ILIKE ? OR full_name ILIKE ?", searchTerm, searchTerm)
+	}
+
+	// Get users
+	var users []models.User
+	if err := query.Offset(pagination.Offset).Limit(pagination.Limit).Order("created_at DESC").Find(&users).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to fetch users",
+		})
+	}
+
+	// Format response
+	userList := make([]fiber.Map, 0)
+	for _, user := range users {
+		userList = append(userList, fiber.Map{
+			"id":           user.ID,
+			"email":        user.Email,
+			"full_name":    user.FullName,
+			"role":         user.Role,
+			"created_date": user.CreatedAt,
+			"updated_date": user.UpdatedAt,
+		})
+	}
+
+	response, err := helpers.CreatePaginationResponse(queryCount, userList, "users", pagination.Page, pagination.Limit)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create pagination response",
+		})
+	}
+
+	return c.JSON(response)
+}
+
+// GetUser godoc
+// @Summary Get user by ID (Admin only)
+// @Description Retrieve a specific user by their ID. Only accessible by admin users.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "User ID (UUID)"
+// @Success 200 {object} map[string]interface{} "User details"
+// @Failure 400 {object} map[string]interface{} "Invalid user ID"
+// @Failure 403 {object} map[string]interface{} "Admin access required"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Router /api/users/{id} [get]
+func GetUser(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	// Validate UUID
+	if _, err := uuid.Parse(id); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid user ID",
+		})
+	}
+
+	var user models.User
+	if err := config.DB.Where("id = ?", id).First(&user).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "User not found",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"id":           user.ID,
+		"email":        user.Email,
+		"full_name":    user.FullName,
+		"role":         user.Role,
+		"created_date": user.CreatedAt,
+		"updated_date": user.UpdatedAt,
+	})
+}
+
+// UpdateUser godoc
+// @Summary Update user (Admin only)
+// @Description Update user information including email, password, full name, and role. Only accessible by admin users.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "User ID (UUID)"
+// @Param request body UpdateUserRequest true "User update details"
+// @Success 200 {object} map[string]interface{} "Updated user details"
+// @Failure 400 {object} map[string]interface{} "Invalid request or user ID"
+// @Failure 403 {object} map[string]interface{} "Admin access required"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 409 {object} map[string]interface{} "Email already exists"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/users/{id} [put]
+func UpdateUser(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	// Validate UUID
+	if _, err := uuid.Parse(id); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid user ID",
+		})
+	}
+
+	var user models.User
+	if err := config.DB.Where("id = ?", id).First(&user).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "User not found",
+		})
+	}
+
+	var req UpdateUserRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	// Check if email is being updated and if it already exists
+	if req.Email != "" && req.Email != user.Email {
+		var existingUser models.User
+		if err := config.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"error": "Email already exists",
+			})
+		}
+		user.Email = req.Email
+	}
+
+	// Update full name if provided
+	if req.FullName != "" {
+		user.FullName = req.FullName
+	}
+
+	// Update role if provided
+	if req.Role != "" {
+		if req.Role != "user" && req.Role != "admin" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Role must be either 'user' or 'admin'",
+			})
+		}
+		user.Role = req.Role
+	}
+
+	// Update password if provided
+	if req.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to hash password",
+			})
+		}
+		user.PasswordHash = string(hashedPassword)
+	}
+
+	if err := config.DB.Save(&user).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to update user",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"id":           user.ID,
+		"email":        user.Email,
+		"full_name":    user.FullName,
+		"role":         user.Role,
+		"created_date": user.CreatedAt,
+		"updated_date": user.UpdatedAt,
+	})
+}
+
+// DeleteUser godoc
+// @Summary Delete user (Admin only)
+// @Description Delete a user by their ID. Only accessible by admin users.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "User ID (UUID)"
+// @Success 200 {object} map[string]interface{} "User deleted successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid user ID"
+// @Failure 403 {object} map[string]interface{} "Admin access required"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/users/{id} [delete]
+func DeleteUser(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	// Validate UUID
+	if _, err := uuid.Parse(id); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid user ID",
+		})
+	}
+
+	var user models.User
+	if err := config.DB.Where("id = ?", id).First(&user).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "User not found",
+		})
+	}
+
+	if err := config.DB.Delete(&user).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to delete user",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "User deleted successfully",
+	})
+}

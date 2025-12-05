@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"pustaka-backend/handlers"
-	"pustaka-backend/models"
 	"pustaka-backend/tests/testutil"
 	"regexp"
 	"testing"
@@ -22,106 +21,9 @@ import (
 )
 
 // Request structs for testing
-type RegisterRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	FullName string `json:"full_name"`
-}
-
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
-}
-
-func TestRegister(t *testing.T) {
-	db, mock, err := testutil.SetupMockDB()
-	assert.NoError(t, err)
-	defer testutil.CloseMockDB(db)
-
-	app := fiber.New()
-	app.Post("/register", handlers.Register)
-
-	t.Run("Successful registration", func(t *testing.T) {
-		reqBody := RegisterRequest{
-			Email:    "newuser@example.com",
-			Password: "password123",
-			FullName: "New User",
-		}
-
-		// Mock: Check if user exists (should return error/not found)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE email = $1`)).
-			WithArgs("newuser@example.com").
-			WillReturnError(gorm.ErrRecordNotFound)
-
-		// Mock: Create user
-		mock.ExpectBegin()
-		mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "users"`)).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "email", "full_name", "role", "created_at", "updated_at"}).
-				AddRow(uuid.New(), "newuser@example.com", "New User", "user", time.Now(), time.Now()))
-		mock.ExpectCommit()
-
-		body, _ := json.Marshal(reqBody)
-		req := httptest.NewRequest("POST", "/register", bytes.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, _ := app.Test(req)
-		assert.Equal(t, fiber.StatusCreated, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "User registered successfully", response["message"])
-		assert.NotNil(t, response["user"])
-	})
-
-	t.Run("Invalid request body", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/register", bytes.NewReader([]byte("invalid json")))
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, _ := app.Test(req)
-		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "Invalid request body", response["error"])
-	})
-
-	t.Run("Email already exists", func(t *testing.T) {
-		reqBody := RegisterRequest{
-			Email:    "existing@example.com",
-			Password: "password123",
-			FullName: "Existing User",
-		}
-
-		// Mock: User already exists
-		existingUser := models.User{
-			ID:    uuid.New(),
-			Email: "existing@example.com",
-		}
-
-		rows := sqlmock.NewRows([]string{"id", "email", "password_hash", "full_name", "role", "created_at", "updated_at"}).
-			AddRow(existingUser.ID, existingUser.Email, "hashedpass", "Existing User", "user", time.Now(), time.Now())
-
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE email = $1`)).
-			WithArgs("existing@example.com").
-			WillReturnRows(rows)
-
-		body, _ := json.Marshal(reqBody)
-		req := httptest.NewRequest("POST", "/register", bytes.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, _ := app.Test(req)
-		assert.Equal(t, fiber.StatusConflict, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "Email already exists", response["error"])
-	})
 }
 
 func TestLogin(t *testing.T) {
@@ -365,5 +267,79 @@ func TestUpdateMe(t *testing.T) {
 
 		resp, _ := app.Test(req)
 		assert.Equal(t, fiber.StatusNotFound, resp.StatusCode)
+	})
+
+	t.Run("Successfully update password", func(t *testing.T) {
+		userID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
+
+		// Mock: Find user
+		rows := sqlmock.NewRows([]string{"id", "email", "password_hash", "full_name", "role", "created_at", "updated_at"}).
+			AddRow(userID, "user@example.com", "oldhashedpass", "Test User", "user", time.Now(), time.Now())
+
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE id = $1`)).
+			WithArgs("550e8400-e29b-41d4-a716-446655440000").
+			WillReturnRows(rows)
+
+		// Mock: Update user with new password
+		mock.ExpectBegin()
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE "users" SET`)).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectCommit()
+
+		updateData := map[string]interface{}{
+			"password": "newpassword123",
+		}
+
+		body, _ := json.Marshal(updateData)
+		req := httptest.NewRequest("PUT", "/me", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, _ := app.Test(req)
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.Equal(t, "user@example.com", response["email"])
+		assert.Equal(t, "Test User", response["full_name"])
+	})
+
+	t.Run("Successfully update full name and password", func(t *testing.T) {
+		userID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
+
+		// Mock: Find user
+		rows := sqlmock.NewRows([]string{"id", "email", "password_hash", "full_name", "role", "created_at", "updated_at"}).
+			AddRow(userID, "user@example.com", "oldhashedpass", "Old Name", "user", time.Now(), time.Now())
+
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE id = $1`)).
+			WithArgs("550e8400-e29b-41d4-a716-446655440000").
+			WillReturnRows(rows)
+
+		// Mock: Update user
+		mock.ExpectBegin()
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE "users" SET`)).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectCommit()
+
+		updateData := map[string]interface{}{
+			"full_name": "Updated Name",
+			"password":  "newpassword123",
+		}
+
+		body, _ := json.Marshal(updateData)
+		req := httptest.NewRequest("PUT", "/me", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, _ := app.Test(req)
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+		var response map[string]interface{}
+		respBody, _ := io.ReadAll(resp.Body)
+		json.Unmarshal(respBody, &response)
+
+		assert.Equal(t, "user@example.com", response["email"])
+		// The response will have the updated full_name
+		assert.NotNil(t, response["full_name"])
 	})
 }

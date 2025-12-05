@@ -16,7 +16,6 @@ func Setup(app *fiber.App) {
 
     // Public routes
     auth := api.Group("/auth")
-    auth.Post("/register", handlers.Register)
     auth.Post("/login", handlers.Login)
 
     // Protected routes
@@ -106,4 +105,14 @@ func Setup(app *fiber.App) {
     salesAssociates.Put("/:id", handlers.UpdateSalesAssociate)
     salesAssociates.Delete("/:id", handlers.DeleteSalesAssociate)
 
+    // Admin Only routes
+    api.Use(middleware.AdminOnly())
+
+    // Users routes
+    users := api.Group("/users")
+    users.Get("/", handlers.GetAllUsers)
+    users.Get("/:id", handlers.GetUser)
+    users.Post("/", handlers.CreateUser)
+    users.Put("/:id", handlers.UpdateUser)
+    users.Delete("/:id", handlers.DeleteUser)
 }
