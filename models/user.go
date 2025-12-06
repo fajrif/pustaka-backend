@@ -15,6 +15,13 @@ type User struct {
     UpdatedAt    time.Time `json:"updated_date"`
 }
 
+type UserRequest struct {
+	Email    string `json:"email,omitempty" example:"admin@example.com"`
+	Password string `json:"password,omitempty" example:"newpassword123"`
+	FullName string `json:"full_name,omitempty" example:"John Doe Updated"`
+	Role     string `json:"role,omitempty" example:"admin"`
+}
+
 func (User) TableName() string {
     return "users"
 }

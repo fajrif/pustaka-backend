@@ -10,102 +10,28 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type CreateUserRequest struct {
-	Email    string `json:"email" example:"admin@example.com"`
-	Password string `json:"password" example:"password123"`
-	FullName string `json:"full_name" example:"John Doe"`
-	Role     string `json:"role" example:"user"`
-}
-
-type UpdateUserRequest struct {
-	Email    string `json:"email,omitempty" example:"admin@example.com"`
-	Password string `json:"password,omitempty" example:"newpassword123"`
-	FullName string `json:"full_name,omitempty" example:"John Doe Updated"`
-	Role     string `json:"role,omitempty" example:"admin"`
-}
-
-// CreateUser godoc
-// @Summary Create a new user (Admin only)
-// @Description Create a new user with email, password, full name, and role. Only accessible by admin users.
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param request body CreateUserRequest true "User creation details"
-// @Success 201 {object} map[string]interface{} "User created successfully"
-// @Failure 400 {object} map[string]interface{} "Invalid request body"
-// @Failure 403 {object} map[string]interface{} "Admin access required"
-// @Failure 409 {object} map[string]interface{} "Email already exists"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /api/users [post]
-func CreateUser(c *fiber.Ctx) error {
-	var req CreateUserRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+// ValidateUserRequest validates the user request fields
+func ValidateUserRequest(req *models.UserRequest) error {
+	if req.Email == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Email is required")
 	}
-
-	// Validate required fields
-	if req.Email == "" || req.Password == "" || req.FullName == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Email, password, and full_name are required",
-		})
+	if req.Password == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Password is required")
 	}
-
-	// Default role to 'user' if not specified
-	if req.Role == "" {
-		req.Role = "user"
+	if req.FullName == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Full name is required")
 	}
-
-	// Validate role
-	if req.Role != "user" && req.Role != "admin" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Role must be either 'user' or 'admin'",
-		})
+	if !helpers.IsValidEmail(req.Email) {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid email format")
 	}
-
-	// Check if user exists
-	var existingUser models.User
-	if err := config.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"error": "Email already exists",
-		})
+	// Additional validations can be added here
+	if !helpers.IsStrongPassword(req.Password) {
+		return fiber.NewError(fiber.StatusBadRequest, "Password must be at least 8 characters long, must contain at least one number, one uppercase letter, one lowercase letter, and one special character")
 	}
-
-	// Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to hash password",
-		})
+	if req.Role != "" && req.Role != "user" && req.Role != "admin" && req.Role != "operator" {
+		return fiber.NewError(fiber.StatusBadRequest, "Role must be either 'user' or 'admin' or 'operator'")
 	}
-
-	// Create user
-	user := models.User{
-		Email:        req.Email,
-		PasswordHash: string(hashedPassword),
-		FullName:     req.FullName,
-		Role:         req.Role,
-	}
-
-	if err := config.DB.Create(&user).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create user",
-		})
-	}
-
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "User created successfully",
-		"user": fiber.Map{
-			"id":           user.ID,
-			"email":        user.Email,
-			"full_name":    user.FullName,
-			"role":         user.Role,
-			"created_date": user.CreatedAt,
-			"updated_date": user.UpdatedAt,
-		},
-	})
+	return nil
 }
 
 // GetAllUsers godoc
@@ -211,6 +137,78 @@ func GetUser(c *fiber.Ctx) error {
 	})
 }
 
+// CreateUser godoc
+// @Summary Create a new user (Admin only)
+// @Description Create a new user with email, password, full name, and role. Only accessible by admin users.
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body UserRequest true "User creation details"
+// @Success 201 {object} map[string]interface{} "User created successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request body"
+// @Failure 403 {object} map[string]interface{} "Admin access required"
+// @Failure 409 {object} map[string]interface{} "Email already exists"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/users [post]
+func CreateUser(c *fiber.Ctx) error {
+	var req models.UserRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	// Validate user fields
+	if err := ValidateUserRequest(&req); err != nil {
+		return c.Status(err.(*fiber.Error).Code).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// Check if user exists
+	var existingUser models.User
+	if err := config.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"error": "Email already exists",
+		})
+	}
+
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to hash password",
+		})
+	}
+
+	// Create user
+	user := models.User{
+		Email:        req.Email,
+		PasswordHash: string(hashedPassword),
+		FullName:     req.FullName,
+		Role:         req.Role,
+	}
+
+	if err := config.DB.Create(&user).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create user",
+		})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "User created successfully",
+		"user": fiber.Map{
+			"id":           user.ID,
+			"email":        user.Email,
+			"full_name":    user.FullName,
+			"role":         user.Role,
+			"created_date": user.CreatedAt,
+			"updated_date": user.UpdatedAt,
+		},
+	})
+}
+
 // UpdateUser godoc
 // @Summary Update user (Admin only)
 // @Description Update user information including email, password, full name, and role. Only accessible by admin users.
@@ -244,7 +242,7 @@ func UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	var req UpdateUserRequest
+	var req models.UserRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
@@ -253,6 +251,11 @@ func UpdateUser(c *fiber.Ctx) error {
 
 	// Check if email is being updated and if it already exists
 	if req.Email != "" && req.Email != user.Email {
+		if !helpers.IsValidEmail(req.Email) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid email format",
+			})
+		}
 		var existingUser models.User
 		if err := config.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
@@ -260,6 +263,22 @@ func UpdateUser(c *fiber.Ctx) error {
 			})
 		}
 		user.Email = req.Email
+	}
+
+	// Update password if provided
+	if req.Password != "" {
+		if !helpers.IsStrongPassword(req.Password) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Password must be at least 8 characters long, must contain at least one number, one uppercase letter, one lowercase letter, and one special character",
+			})
+		}
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to hash password",
+			})
+		}
+		user.PasswordHash = string(hashedPassword)
 	}
 
 	// Update full name if provided
@@ -271,21 +290,10 @@ func UpdateUser(c *fiber.Ctx) error {
 	if req.Role != "" {
 		if req.Role != "user" && req.Role != "admin" {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Role must be either 'user' or 'admin'",
+				"error": "Role must be either 'user' or 'admin' or 'operator'",
 			})
 		}
 		user.Role = req.Role
-	}
-
-	// Update password if provided
-	if req.Password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to hash password",
-			})
-		}
-		user.PasswordHash = string(hashedPassword)
 	}
 
 	if err := config.DB.Save(&user).Error; err != nil {

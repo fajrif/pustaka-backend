@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	// fmt "fmt"
 	"bytes"
 	"encoding/json"
 	"io"
@@ -44,7 +45,7 @@ func TestCreateUser(t *testing.T) {
 	t.Run("Successfully create user", func(t *testing.T) {
 		reqBody := map[string]interface{}{
 			"email":     "newuser@example.com",
-			"password":  "password123",
+			"password":  "Password123!",
 			"full_name": "New User",
 			"role":      "user",
 		}
@@ -80,7 +81,7 @@ func TestCreateUser(t *testing.T) {
 	t.Run("Create user with admin role", func(t *testing.T) {
 		reqBody := map[string]interface{}{
 			"email":     "admin2@example.com",
-			"password":  "password123",
+			"password":  "Password123!",
 			"full_name": "Admin User",
 			"role":      "admin",
 		}
@@ -144,13 +145,13 @@ func TestCreateUser(t *testing.T) {
 		respBody, _ := io.ReadAll(resp.Body)
 		json.Unmarshal(respBody, &response)
 
-		assert.Equal(t, "Email, password, and full_name are required", response["error"])
+		assert.Equal(t, "Password is required", response["error"])
 	})
 
 	t.Run("Email already exists", func(t *testing.T) {
 		reqBody := map[string]interface{}{
 			"email":     "existing@example.com",
-			"password":  "password123",
+			"password":  "Password123!",
 			"full_name": "Existing User",
 		}
 
@@ -184,7 +185,7 @@ func TestCreateUser(t *testing.T) {
 	t.Run("Invalid role", func(t *testing.T) {
 		reqBody := map[string]interface{}{
 			"email":     "newuser@example.com",
-			"password":  "password123",
+			"password":  "Password123!",
 			"full_name": "New User",
 			"role":      "superadmin",
 		}
@@ -200,7 +201,7 @@ func TestCreateUser(t *testing.T) {
 		respBody, _ := io.ReadAll(resp.Body)
 		json.Unmarshal(respBody, &response)
 
-		assert.Equal(t, "Role must be either 'user' or 'admin'", response["error"])
+		assert.Equal(t, "Role must be either 'user' or 'admin' or 'operator'", response["error"])
 	})
 }
 
@@ -431,10 +432,12 @@ func TestUpdateUser(t *testing.T) {
 		}
 
 		body, _ := json.Marshal(updateData)
-		req := httptest.NewRequest("PUT", "/users/"+userID.String(), bytes.NewReader(body))
+		req := httptest.NewRequest("PUT", "/users/" + userID.String(), bytes.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, _ := app.Test(req)
+		// _body, _ := io.ReadAll(resp.Body)
+		// fmt.Println("Response:", string(_body))
 		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 
 		var response map[string]interface{}
@@ -462,7 +465,7 @@ func TestUpdateUser(t *testing.T) {
 		mock.ExpectCommit()
 
 		updateData := map[string]interface{}{
-			"password": "newpassword123",
+			"password": "NewPassword123!",
 		}
 
 		body, _ := json.Marshal(updateData)
@@ -650,7 +653,7 @@ func TestUpdateUser(t *testing.T) {
 		respBody, _ := io.ReadAll(resp.Body)
 		json.Unmarshal(respBody, &response)
 
-		assert.Equal(t, "Role must be either 'user' or 'admin'", response["error"])
+		assert.Equal(t, "Role must be either 'user' or 'admin' or 'operator'", response["error"])
 	})
 
 	t.Run("Invalid request body", func(t *testing.T) {
@@ -751,7 +754,7 @@ func TestDeleteUser(t *testing.T) {
 
 func TestPasswordHashing(t *testing.T) {
 	t.Run("Password is properly hashed", func(t *testing.T) {
-		password := "testpassword123"
+		password := "Testpassword123!"
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 		assert.NoError(t, err)
