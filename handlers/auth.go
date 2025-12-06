@@ -120,8 +120,8 @@ func GetMe(c *fiber.Ctx) error {
         "email":        user.Email,
         "full_name":    user.FullName,
         "role":         user.Role,
-        "created_date": user.CreatedAt,
-        "updated_date": user.UpdatedAt,
+        "created_at": user.CreatedAt,
+        "updated_at": user.UpdatedAt,
     })
 }
 
@@ -188,7 +188,7 @@ func UpdateMe(c *fiber.Ctx) error {
         "email":        user.Email,
         "full_name":    user.FullName,
         "role":         user.Role,
-        "created_date": user.CreatedAt,
-        "updated_date": user.UpdatedAt,
+        "created_at": user.CreatedAt,
+        "updated_at": user.UpdatedAt,
     })
 }

@@ -82,8 +82,8 @@ func GetAllUsers(c *fiber.Ctx) error {
 			"email":        user.Email,
 			"full_name":    user.FullName,
 			"role":         user.Role,
-			"created_date": user.CreatedAt,
-			"updated_date": user.UpdatedAt,
+			"created_at": user.CreatedAt,
+			"updated_at": user.UpdatedAt,
 		})
 	}
 
@@ -132,8 +132,8 @@ func GetUser(c *fiber.Ctx) error {
 		"email":        user.Email,
 		"full_name":    user.FullName,
 		"role":         user.Role,
-		"created_date": user.CreatedAt,
-		"updated_date": user.UpdatedAt,
+		"created_at": user.CreatedAt,
+		"updated_at": user.UpdatedAt,
 	})
 }
 
@@ -203,8 +203,8 @@ func CreateUser(c *fiber.Ctx) error {
 			"email":        user.Email,
 			"full_name":    user.FullName,
 			"role":         user.Role,
-			"created_date": user.CreatedAt,
-			"updated_date": user.UpdatedAt,
+			"created_at": user.CreatedAt,
+			"updated_at": user.UpdatedAt,
 		},
 	})
 }
@@ -288,7 +288,7 @@ func UpdateUser(c *fiber.Ctx) error {
 
 	// Update role if provided
 	if req.Role != "" {
-		if req.Role != "user" && req.Role != "admin" {
+		if req.Role != "user" && req.Role != "admin" && req.Role != "operator" {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "Role must be either 'user' or 'admin' or 'operator'",
 			})
@@ -307,8 +307,8 @@ func UpdateUser(c *fiber.Ctx) error {
 		"email":        user.Email,
 		"full_name":    user.FullName,
 		"role":         user.Role,
-		"created_date": user.CreatedAt,
-		"updated_date": user.UpdatedAt,
+		"created_at": user.CreatedAt,
+		"updated_at": user.UpdatedAt,
 	})
 }
 
