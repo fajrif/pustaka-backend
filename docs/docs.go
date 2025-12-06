@@ -3273,7 +3273,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateUserRequest"
+                            "$ref": "#/definitions/models.UserRequest"
                         }
                     }
                 ],
@@ -3405,7 +3405,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.UpdateUserRequest"
+                            "$ref": "#/definitions/models.UserRequest"
                         }
                     }
                 ],
@@ -3521,27 +3521,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.CreateUserRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "example": "admin@example.com"
-                },
-                "full_name": {
-                    "type": "string",
-                    "example": "John Doe"
-                },
-                "password": {
-                    "type": "string",
-                    "example": "password123"
-                },
-                "role": {
-                    "type": "string",
-                    "example": "user"
-                }
-            }
-        },
         "handlers.LoginRequest": {
             "type": "object",
             "properties": {
@@ -3565,27 +3544,6 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "example": "newpassword123"
-                }
-            }
-        },
-        "handlers.UpdateUserRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "example": "admin@example.com"
-                },
-                "full_name": {
-                    "type": "string",
-                    "example": "John Doe Updated"
-                },
-                "password": {
-                    "type": "string",
-                    "example": "newpassword123"
-                },
-                "role": {
-                    "type": "string",
-                    "example": "admin"
                 }
             }
         },
@@ -3942,7 +3900,7 @@ const docTemplate = `{
         "models.User": {
             "type": "object",
             "properties": {
-                "created_date": {
+                "created_at": {
                     "type": "string"
                 },
                 "email": {
@@ -3957,8 +3915,29 @@ const docTemplate = `{
                 "role": {
                     "type": "string"
                 },
-                "updated_date": {
+                "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "models.UserRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "admin@example.com"
+                },
+                "full_name": {
+                    "type": "string",
+                    "example": "John Doe Updated"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "newpassword123"
+                },
+                "role": {
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         }

@@ -144,7 +144,7 @@ func GetUser(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body UserRequest true "User creation details"
+// @Param request body models.UserRequest true "User creation details"
 // @Success 201 {object} map[string]interface{} "User created successfully"
 // @Failure 400 {object} map[string]interface{} "Invalid request body"
 // @Failure 403 {object} map[string]interface{} "Admin access required"
@@ -217,7 +217,7 @@ func CreateUser(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "User ID (UUID)"
-// @Param request body UpdateUserRequest true "User update details"
+// @Param request body models.UserRequest true "User update details"
 // @Success 200 {object} map[string]interface{} "Updated user details"
 // @Failure 400 {object} map[string]interface{} "Invalid request or user ID"
 // @Failure 403 {object} map[string]interface{} "Admin access required"

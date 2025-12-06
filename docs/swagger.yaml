@@ -1,20 +1,5 @@
 basePath: /
 definitions:
-  handlers.CreateUserRequest:
-    properties:
-      email:
-        example: admin@example.com
-        type: string
-      full_name:
-        example: John Doe
-        type: string
-      password:
-        example: password123
-        type: string
-      role:
-        example: user
-        type: string
-    type: object
   handlers.LoginRequest:
     properties:
       email:
@@ -31,21 +16,6 @@ definitions:
         type: string
       password:
         example: newpassword123
-        type: string
-    type: object
-  handlers.UpdateUserRequest:
-    properties:
-      email:
-        example: admin@example.com
-        type: string
-      full_name:
-        example: John Doe Updated
-        type: string
-      password:
-        example: newpassword123
-        type: string
-      role:
-        example: admin
         type: string
     type: object
   models.BidangStudi:
@@ -280,7 +250,7 @@ definitions:
     type: object
   models.User:
     properties:
-      created_date:
+      created_at:
         type: string
       email:
         type: string
@@ -290,7 +260,22 @@ definitions:
         type: string
       role:
         type: string
-      updated_date:
+      updated_at:
+        type: string
+    type: object
+  models.UserRequest:
+    properties:
+      email:
+        example: admin@example.com
+        type: string
+      full_name:
+        example: John Doe Updated
+        type: string
+      password:
+        example: newpassword123
+        type: string
+      role:
+        example: admin
         type: string
     type: object
 host: localhost:8080
@@ -2448,7 +2433,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateUserRequest'
+          $ref: '#/definitions/models.UserRequest'
       produces:
       - application/json
       responses:
@@ -2581,7 +2566,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.UpdateUserRequest'
+          $ref: '#/definitions/models.UserRequest'
       produces:
       - application/json
       responses:
