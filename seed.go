@@ -50,8 +50,11 @@ func runAllSeeders() {
 		fn   func() error
 	}{
 		{"jenis_buku", func() error { return seeds.JenisBukuSeeder(config.DB) }},
+		{"kelas", func() error { return seeds.KelasSeeder(config.DB) }},
+		{"bidang_studi", func() error { return seeds.BidangStudiSeeder(config.DB) }},
+		{"cities", func() error { return seeds.CitiesSeeder(config.DB) }},
+		{"jenjang_studi", func() error { return seeds.JenjangStudiSeeder(config.DB) }},
 		// Add more seeders here as you create them
-		// {"cities", func() error { return seeds.CitiesSeeder(config.DB) }},
 		// {"expeditions", func() error { return seeds.ExpeditionsSeeder(config.DB) }},
 	}
 
@@ -70,13 +73,19 @@ func runSpecificSeeder(name string) {
 	switch name {
 	case "jenis_buku":
 		err = seeds.JenisBukuSeeder(config.DB)
+	case "kelas":
+		err = seeds.KelasSeeder(config.DB)
+	case "bidang_studi":
+		err = seeds.BidangStudiSeeder(config.DB)
+	case "jenjang_studi":
+		err = seeds.JenjangStudiSeeder(config.DB)
+	case "cities":
+		err = seeds.CitiesSeeder(config.DB)
 	// Add more cases here as you create more seeders
-	// case "cities":
-	// 	err = seeds.CitiesSeeder(config.DB)
 	// case "expeditions":
 	// 	err = seeds.ExpeditionsSeeder(config.DB)
 	default:
-		log.Fatalf("❌ Unknown seeder: %s\n\nAvailable seeders:\n  - jenis_buku\n", name)
+		log.Fatalf("❌ Unknown seeder: %s\n\nAvailable seeders:\n  - jenis_buku, kelas, bidang_studi, jenjang_studi, cities\n", name)
 	}
 
 	if err != nil {

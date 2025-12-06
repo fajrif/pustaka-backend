@@ -12,40 +12,142 @@ func JenisBukuSeeder(db *gorm.DB) error {
 	fmt.Println("📝 Seeding jenis_buku table...")
 
 	// Helper function to create string pointer
-	strPtr := func(s string) *string {
-		return &s
-	}
+	// strPtr := func(s string) *string {
+	// 	return &s
+	// }
 
 	jenisBukuData := []models.JenisBuku{
 		{
-			Code:        "FIK",
-			Name:        "Fiksi",
-			Description: strPtr("Buku fiksi dan novel"),
+				Code: "AKM",
+				Name: "ASESMEN KOMP MINIMUN",
 		},
 		{
-			Code:        "NON-FIK",
-			Name:        "Non-Fiksi",
-			Description: strPtr("Buku non-fiksi dan referensi"),
+				Code: "BAS",
+				Name: "BAHAN AJAR SISWA",
 		},
 		{
-			Code:        "PEND",
-			Name:        "Pendidikan",
-			Description: strPtr("Buku pendidikan dan akademik"),
+				Code: "PK1",
+				Name: "BSE",
 		},
 		{
-			Code:        "ANAK",
-			Name:        "Anak-Anak",
-			Description: strPtr("Buku untuk anak-anak"),
+				Code: "BG",
+				Name: "BUKU GURU",
 		},
 		{
-			Code:        "REF",
-			Name:        "Referensi",
-			Description: strPtr("Buku referensi seperti kamus dan ensiklopedia"),
+				Code: "PKT",
+				Name: "BUKU MATERI",
+		},
+		{
+				Code: "KBR",
+				Name: "K. BULAN RAMADHAN",
+		},
+		{
+				Code: "KA",
+				Name: "KOMPUTER AKUNTANSI",
+		},
+		{
+				Code: "KB",
+				Name: "KOMUNIKASI BISNIS",
+		},
+		{
+				Code: "KM",
+				Name: "KURIKULUM MERDEKA",
+		},
+		{
+				Code: "LKS",
+				Name: "LEMBAR KERJA SISWA",
+		},
+		{
+				Code: "MTS",
+				Name: "MADRASAH TSANAWIYAH",
+		},
+		{
+				Code: "MJL",
+				Name: "MAJALAH",
+		},
+		{
+				Code: "MDL",
+				Name: "MODUL",
+		},
+		{
+				Code: "NK",
+				Name: "NON KURIKULUM",
+		},
+		{
+				Code: "PAR",
+				Name: "PARIWISATA",
+		},
+		{
+				Code: "PGP",
+				Name: "PEG GURU PSAJ",
+		},
+		{
+				Code: "PG",
+				Name: "PEGANGAN GURU",
+		},
+		{
+				Code: "PGU",
+				Name: "PEGANGAN GURU US",
+		},
+		{
+				Code: "PSA",
+				Name: "PEN SUMATIF AKHIR",
+		},
+		{
+				Code: "PPP",
+				Name: "PENG & PEND PRO",
+		},
+		{
+				Code: "PGB",
+				Name: "PG K13",
+		},
+		{
+				Code: "PGM",
+				Name: "PG KUR MERDEKA",
+		},
+		{
+				Code: "PRP",
+				Name: "PG PRODUKTIF",
+		},
+		{
+				Code: "PGT",
+				Name: "PG TEMATIK",
+		},
+		{
+				Code: "PGA",
+				Name: "PG TKA",
+		},
+		{
+				Code: "PRO",
+				Name: "PRODUKTIF",
+		},
+		{
+				Code: "SEK",
+				Name: "SENI DAN EKONOMI KRE",
+		},
+		{
+				Code: "TMT",
+				Name: "TEMATIK",
+		},
+		{
+				Code: "TKA",
+				Name: "TES KEMAMPUAN AKADEM",
+		},
+		{
+				Code: "UAN",
+				Name: "UAS",
+		},
+		{
+				Code: "UM",
+				Name: "UJIAN MADRASAH",
 		},
 	}
 
 	created := 0
 	skipped := 0
+
+	// delete all existing records before seeding
+	db.Exec("DELETE FROM jenis_buku")
 
 	// Insert all records using FirstOrCreate
 	for _, jenisBuku := range jenisBukuData {
