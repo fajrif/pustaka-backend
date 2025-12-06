@@ -30,6 +30,12 @@ func GetAllPublishers(c *fiber.Ctx) error {
 	query := config.DB.Order("created_at DESC")
 	queryCount := config.DB.Model(&models.Publisher{})
 
+	// add params for not using pagination
+	if c.Query("all") == "true" {
+		pagination.Limit = -1 // No limit
+		pagination.Offset = 0 // No offset
+	}
+
 	// Filter search
 	if searchQuery := c.Query("search"); searchQuery != "" {
 		// Wrap string search with wildcard SQL LIKE
