@@ -3573,6 +3573,9 @@ const docTemplate = `{
         "models.Book": {
             "type": "object",
             "properties": {
+                "author": {
+                    "type": "string"
+                },
                 "bidang_studi": {
                     "$ref": "#/definitions/models.BidangStudi"
                 },
@@ -3586,6 +3589,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "isbn": {
                     "type": "string"
                 },
                 "jenis_buku": {
@@ -3617,6 +3623,9 @@ const docTemplate = `{
                 },
                 "publisher_id": {
                     "type": "string"
+                },
+                "stock": {
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"

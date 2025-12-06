@@ -35,6 +35,8 @@ definitions:
     type: object
   models.Book:
     properties:
+      author:
+        type: string
       bidang_studi:
         $ref: '#/definitions/models.BidangStudi'
       bidang_studi_id:
@@ -44,6 +46,8 @@ definitions:
       description:
         type: string
       id:
+        type: string
+      isbn:
         type: string
       jenis_buku:
         $ref: '#/definitions/models.JenisBuku'
@@ -65,6 +69,8 @@ definitions:
         $ref: '#/definitions/models.Publisher'
       publisher_id:
         type: string
+      stock:
+        type: integer
       updated_at:
         type: string
       year:

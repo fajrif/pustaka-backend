@@ -10,6 +10,9 @@ type Book struct {
 	Name           string        `gorm:"not null" json:"name"`
 	Description    *string       `json:"description"`
 	Year           string        `gorm:"not null" json:"year"`
+	Author         *string       `json:"author"`
+	ISBN           *string       `json:"isbn"`
+	Stock          int           `gorm:"default:0" json:"stock"`
 	JenisBukuID    *uuid.UUID    `gorm:"type:uuid" json:"jenis_buku_id"`
 	JenisBuku      *JenisBuku    `gorm:"foreignKey:JenisBukuID" json:"jenis_buku,omitempty"`
 	JenjangStudiID *uuid.UUID    `gorm:"type:uuid" json:"jenjang_studi_id"`

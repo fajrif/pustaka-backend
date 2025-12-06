@@ -31,9 +31,9 @@ func TestGetAllBooks(t *testing.T) {
 		bookID1 := uuid.New()
 		bookID2 := uuid.New()
 
-		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
-			AddRow(bookID1, "Mathematics Grade 1", "Test book description", "2024", nil, nil, nil, nil, nil, 50000.00, time.Now(), time.Now()).
-			AddRow(bookID2, "Science Grade 2", "Test book description", "2024", nil, nil, nil, nil, nil, 75000.00, time.Now(), time.Now())
+		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "author", "isbn", "stock", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
+			AddRow(bookID1, "Mathematics Grade 1", "Test book description", "2024", nil, nil, 0, nil, nil, nil, nil, nil, 50000.00, time.Now(), time.Now()).
+			AddRow(bookID2, "Science Grade 2", "Test book description", "2024", nil, nil, 0, nil, nil, nil, nil, nil, 75000.00, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" ORDER BY created_at DESC`)).
 			WillReturnRows(bookRows)
@@ -60,7 +60,7 @@ func TestGetAllBooks(t *testing.T) {
 		assert.NoError(t, err)
 		defer testutil.CloseMockDB(db2)
 
-		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"})
+		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "author", "isbn", "stock", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"})
 
 		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" ORDER BY created_at DESC`)).
 			WillReturnRows(bookRows)
@@ -110,8 +110,8 @@ func TestGetAllBooks(t *testing.T) {
 		bookID := uuid.New()
 		description := "Test book description"
 
-		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
-			AddRow(bookID, "Mathematics Grade 1", &description, "2024", nil, nil, nil, nil, nil, 50000.00, time.Now(), time.Now())
+		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "author", "isbn", "stock", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
+			AddRow(bookID, "Mathematics Grade 1", &description, "2024", nil, nil, 0, nil, nil, nil, nil, nil, 50000.00, time.Now(), time.Now())
 
 		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" WHERE books.name ILIKE $1 OR books.description ILIKE $2 ORDER BY created_at DESC`)).
 			WithArgs("%Mathematics%", "%Mathematics%").
@@ -142,8 +142,8 @@ func TestGetAllBooks(t *testing.T) {
 		bookID := uuid.New()
 		description := "Science book description"
 
-		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
-			AddRow(bookID, "Science Grade 2", &description, "2024", nil, nil, nil, nil, nil, 75000.00, time.Now(), time.Now())
+		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "author", "isbn", "stock", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
+			AddRow(bookID, "Science Grade 2", &description, "2024", nil, nil, 0, nil, nil, nil, nil, nil, 75000.00, time.Now(), time.Now())
 
 		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" WHERE books.name ILIKE $1 OR books.description ILIKE $2 ORDER BY created_at DESC`)).
 			WithArgs("%Science%", "%Science%").
@@ -178,8 +178,8 @@ func TestGetBook(t *testing.T) {
 
 		bookID := uuid.New()
 
-		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
-			AddRow(bookID, "Mathematics Grade 1", "Test book description", "2024", nil, nil, nil, nil, nil, 50000.00, time.Now(), time.Now())
+		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "author", "isbn", "stock", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
+			AddRow(bookID, "Mathematics Grade 1", "Test book description", "2024", nil, nil, 0, nil, nil, nil, nil, nil, 50000.00, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" WHERE id = $1`)).
 			WithArgs(bookID.String()).
@@ -319,8 +319,8 @@ func TestUpdateBook(t *testing.T) {
 
 		bookID := uuid.New()
 
-		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
-			AddRow(bookID, "Mathematics Grade 1", "Test book description", "2024", nil, nil, nil, nil, nil, 50000.00, time.Now(), time.Now())
+		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "author", "isbn", "stock", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
+			AddRow(bookID, "Mathematics Grade 1", "Test book description", "2024", nil, nil, 0, nil, nil, nil, nil, nil, 50000.00, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" WHERE id = $1`)).
 			WithArgs(bookID.String()).
@@ -382,8 +382,8 @@ func TestUpdateBook(t *testing.T) {
 
 		bookID := uuid.New()
 
-		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
-			AddRow(bookID, "Mathematics Grade 1", "Test book description", "2024", nil, nil, nil, nil, nil, 50000.00, time.Now(), time.Now())
+		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "author", "isbn", "stock", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
+			AddRow(bookID, "Mathematics Grade 1", "Test book description", "2024", nil, nil, 0, nil, nil, nil, nil, nil, 50000.00, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" WHERE id = $1`)).
 			WithArgs(bookID.String()).
@@ -409,8 +409,8 @@ func TestUpdateBook(t *testing.T) {
 
 		bookID := uuid.New()
 
-		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
-			AddRow(bookID, "Mathematics Grade 1", "Test book description", "2024", nil, nil, nil, nil, nil, 50000.00, time.Now(), time.Now())
+		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "author", "isbn", "stock", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas_id", "publisher_id", "price", "created_at", "updated_at"}).
+			AddRow(bookID, "Mathematics Grade 1", "Test book description", "2024", nil, nil, 0, nil, nil, nil, nil, nil, 50000.00, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" WHERE id = $1`)).
 			WithArgs(bookID.String()).
