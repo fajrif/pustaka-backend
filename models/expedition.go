@@ -18,6 +18,8 @@ type Expedition struct {
 	Phone2      *string    `json:"phone2"`
 	Email       *string    `json:"email"`
 	Website     *string    `json:"website"`
+	LogoUrl     *string    `json:"logo_url,omitempty"`
+	FileUrl     *string    `json:"file_url,omitempty"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
 }

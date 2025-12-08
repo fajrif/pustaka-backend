@@ -24,6 +24,8 @@ type Book struct {
 	PublisherID    *uuid.UUID    `gorm:"type:uuid" json:"publisher_id"`
 	Publisher      *Publisher    `gorm:"foreignKey:PublisherID" json:"publisher,omitempty"`
 	Price          float64       `gorm:"not null" json:"price"`
+	ImageUrl       *string       `json:"image_url,omitempty"`
+	FileUrl        *string       `json:"file_url,omitempty"`
 	CreatedAt      time.Time     `json:"created_at"`
 	UpdatedAt      time.Time     `json:"updated_at"`
 }
