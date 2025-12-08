@@ -11,6 +11,7 @@ type User struct {
     PasswordHash string    `gorm:"not null" json:"-"`
     FullName     string    `gorm:"not null" json:"full_name"`
     Role         string    `gorm:"default:'user'" json:"role"`
+    PhotoUrl     *string   `json:"photo_url,omitempty"`
     CreatedAt    time.Time `json:"created_at"`
     UpdatedAt    time.Time `json:"updated_at"`
 }

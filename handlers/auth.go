@@ -116,10 +116,11 @@ func GetMe(c *fiber.Ctx) error {
     }
 
     return c.JSON(fiber.Map{
-        "id":           user.ID,
-        "email":        user.Email,
-        "full_name":    user.FullName,
-        "role":         user.Role,
+        "id":         user.ID,
+        "email":      user.Email,
+        "full_name":  user.FullName,
+        "role":       user.Role,
+        "photo_url":  user.PhotoUrl,
         "created_at": user.CreatedAt,
         "updated_at": user.UpdatedAt,
     })
@@ -184,10 +185,11 @@ func UpdateMe(c *fiber.Ctx) error {
     }
 
     return c.JSON(fiber.Map{
-        "id":           user.ID,
-        "email":        user.Email,
-        "full_name":    user.FullName,
-        "role":         user.Role,
+        "id":         user.ID,
+        "email":      user.Email,
+        "full_name":  user.FullName,
+        "role":       user.Role,
+        "photo_url":  user.PhotoUrl,
         "created_at": user.CreatedAt,
         "updated_at": user.UpdatedAt,
     })

@@ -25,6 +25,10 @@ func Setup(app *fiber.App) {
     api.Get("/me", handlers.GetMe)
     api.Put("/me", handlers.UpdateMe)
 
+    // Upload routes
+    api.Post("/upload/:resource/:field/:id", handlers.UploadResourceField)
+    api.Delete("/upload/:resource/:field/:id", handlers.DeleteResourceField)
+
     // MerkBuku routes
     merkBuku := api.Group("/merk-buku")
     merkBuku.Get("/", handlers.GetAllMerkBuku)

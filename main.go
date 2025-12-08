@@ -66,6 +66,9 @@ func main() {
         AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
     }))
 
+    // Static file serving for uploads
+    app.Static("/uploads", "./uploads")
+
 		// root path
 		app.Get("/", func(c *fiber.Ctx) error {
         return c.JSON(fiber.Map{

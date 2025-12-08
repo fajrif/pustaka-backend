@@ -47,6 +47,7 @@ Thumbs.db
 # JetBrains IDE
 *.iml
 /.idea/
+/uploads/**/*
 
 # VSCode workspace
 *.code-workspace
