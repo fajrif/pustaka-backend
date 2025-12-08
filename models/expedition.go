@@ -13,6 +13,7 @@ type Expedition struct {
 	Address     string     `gorm:"not null" json:"address"`
 	CityID      *uuid.UUID `gorm:"type:uuid" json:"city_id"`
 	City        *City      `gorm:"foreignKey:CityID" json:"city,omitempty"`
+	CityCode    string     `gorm:"-" json:"city_code"` // VIRTUAL FIELD (ignored by GORM)
 	Area        *string    `json:"area"`
 	Phone1      string     `gorm:"not null" json:"phone1"`
 	Phone2      *string    `json:"phone2"`
