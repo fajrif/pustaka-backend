@@ -22,6 +22,8 @@ type SalesAssociate struct {
 	JoinDate        time.Time  `gorm:"not null" json:"join_date"`
 	EndJoinDate     *time.Time `json:"end_join_date"`
 	Discount        float64    `gorm:"not null" json:"discount"`
+	PhotoUrl        *string    `json:"photo_url,omitempty"`
+	FileUrl         *string    `json:"file_url,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 }

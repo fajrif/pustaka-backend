@@ -3187,6 +3187,157 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/upload/{resource}/{field}/{id}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upload image or file for a specific resource and field",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "Upload file for a resource",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource name (users, books, publishers, expeditions, sales-associates)",
+                        "name": "resource",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field name (photo, image, file, logo)",
+                        "name": "field",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "File to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Upload successful with file URL",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or validation error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete uploaded file and set database field to null",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "Delete file for a resource",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource name (users, books, publishers, expeditions, sales-associates)",
+                        "name": "resource",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field name (photo, image, file, logo)",
+                        "name": "field",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File deleted successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or validation error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Resource or file not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/users": {
             "get": {
                 "security": [
@@ -3588,7 +3739,13 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "file_url": {
+                    "type": "string"
+                },
                 "id": {
+                    "type": "string"
+                },
+                "image_url": {
                     "type": "string"
                 },
                 "isbn": {
@@ -3682,7 +3839,13 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "file_url": {
+                    "type": "string"
+                },
                 "id": {
+                    "type": "string"
+                },
+                "logo_url": {
                     "type": "string"
                 },
                 "name": {
@@ -3827,7 +3990,13 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "file_url": {
+                    "type": "string"
+                },
                 "id": {
+                    "type": "string"
+                },
+                "logo_url": {
                     "type": "string"
                 },
                 "name": {
@@ -3880,6 +4049,9 @@ const docTemplate = `{
                 "end_join_date": {
                     "type": "string"
                 },
+                "file_url": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -3896,6 +4068,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "phone2": {
+                    "type": "string"
+                },
+                "photo_url": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -3919,6 +4094,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "photo_url": {
                     "type": "string"
                 },
                 "role": {

@@ -45,7 +45,11 @@ definitions:
         type: string
       description:
         type: string
+      file_url:
+        type: string
       id:
+        type: string
+      image_url:
         type: string
       isbn:
         type: string
@@ -107,7 +111,11 @@ definitions:
         type: string
       email:
         type: string
+      file_url:
+        type: string
       id:
+        type: string
+      logo_url:
         type: string
       name:
         type: string
@@ -202,7 +210,11 @@ definitions:
         type: string
       email:
         type: string
+      file_url:
+        type: string
       id:
+        type: string
+      logo_url:
         type: string
       name:
         type: string
@@ -237,6 +249,8 @@ definitions:
         type: string
       end_join_date:
         type: string
+      file_url:
+        type: string
       id:
         type: string
       jenis_pembayaran:
@@ -248,6 +262,8 @@ definitions:
       phone1:
         type: string
       phone2:
+        type: string
+      photo_url:
         type: string
       updated_at:
         type: string
@@ -263,6 +279,8 @@ definitions:
       full_name:
         type: string
       id:
+        type: string
+      photo_url:
         type: string
       role:
         type: string
@@ -2386,6 +2404,108 @@ paths:
       summary: Update a sales associate
       tags:
       - SalesAssociates
+  /api/upload/{resource}/{field}/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete uploaded file and set database field to null
+      parameters:
+      - description: Resource name (users, books, publishers, expeditions, sales-associates)
+        in: path
+        name: resource
+        required: true
+        type: string
+      - description: Field name (photo, image, file, logo)
+        in: path
+        name: field
+        required: true
+        type: string
+      - description: Resource ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Resource or file not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete file for a resource
+      tags:
+      - Upload
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload image or file for a specific resource and field
+      parameters:
+      - description: Resource name (users, books, publishers, expeditions, sales-associates)
+        in: path
+        name: resource
+        required: true
+        type: string
+      - description: Field name (photo, image, file, logo)
+        in: path
+        name: field
+        required: true
+        type: string
+      - description: Resource ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Upload successful with file URL
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Resource not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload file for a resource
+      tags:
+      - Upload
   /api/users:
     get:
       consumes:
