@@ -189,6 +189,36 @@ Check your `.env` file and ensure the database is running:
 make db-info
 ```
 
+### Error: "duplicate code or name"
+some tables require code or name to be unique, this is how to check:
+place this code inside the seeder and modify according your array of
+objects to:
+- detect the same code in bidangStudiData and print the duplicates before proceeding
+- detect the same name in bidangStudiData and print the duplicates before proceeding
+
+```go
+    bidangStudiCodes := make(map[string]bool)
+    for _, bidangStudi := range bidangStudiData {
+        if _, exists := bidangStudiCodes[bidangStudi.Code]; exists {
+            return fmt.Errorf("duplicate code found in bidangStudiData: %s", bidangStudi.Code)
+        }
+        bidangStudiCodes[bidangStudi.Code] = true
+    }
+
+    bidangStudiNames := make(map[string]bool)
+    for _, bidangStudi := range bidangStudiData {
+        if _, exists := bidangStudiNames[bidangStudi.Name]; exists {
+            return fmt.Errorf("duplicate name found in bidangStudiData: %s", bidangStudi.Name)
+        }
+        bidangStudiNames[bidangStudi.Name] = true
+    }
+```
+
+and run this command in the terminal
+```bash
+make seed-rebuild && make seed NAME=bidang_studi
+```
+
 ### Seeder not found
 Make sure you:
 1. Created the seeder file in `seeds/` directory

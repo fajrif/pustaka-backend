@@ -1982,25 +1982,6 @@ func BidangStudiSeeder(db *gorm.DB) error {
 	created := 0
 	skipped := 0
 
-	// TOOLS:
-	// detect the same code in bidangStudiData and print the duplicates before proceeding
-	// detect the same name in bidangStudiData and print the duplicates before proceeding
-	// bidangStudiCodes := make(map[string]bool)
-	// for _, bidangStudi := range bidangStudiData {
-	// 	if _, exists := bidangStudiCodes[bidangStudi.Code]; exists {
-	// 		return fmt.Errorf("duplicate code found in bidangStudiData: %s", bidangStudi.Code)
-	// 	}
-	// 	bidangStudiCodes[bidangStudi.Code] = true
-	// }
-
-	// bidangStudiNames := make(map[string]bool)
-	// for _, bidangStudi := range bidangStudiData {
-	// 	if _, exists := bidangStudiNames[bidangStudi.Name]; exists {
-	// 		return fmt.Errorf("duplicate name found in bidangStudiData: %s", bidangStudi.Name)
-	// 	}
-	// 	bidangStudiNames[bidangStudi.Name] = true
-	// }
-
 	// delete all existing records before seeding
 	db.Exec("DELETE FROM bidang_studi")
 
