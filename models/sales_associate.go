@@ -8,7 +8,7 @@ import (
 type SalesAssociate struct {
 	ID              uuid.UUID  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	Code            string     `gorm:"unique;not null" json:"code"`
-	Name            string     `gorm:"unique;not null" json:"name"`
+	Name            string     `gorm:"not null" json:"name"`
 	Description     *string    `json:"description"`
 	Address         string     `gorm:"not null" json:"address"`
 	CityID          *uuid.UUID `gorm:"type:uuid" json:"city_id"`
@@ -19,8 +19,8 @@ type SalesAssociate struct {
 	Email           *string    `json:"email"`
 	Website         *string    `json:"website"`
 	JenisPembayaran string     `gorm:"default:'T'" json:"jenis_pembayaran"`
-	JoinDate        time.Time  `gorm:"not null" json:"join_date"`
-	EndJoinDate     *time.Time `json:"end_join_date"`
+	JoinDate        time.Time  `gorm:"not null" json:"join_date"` // value types
+	EndJoinDate     *time.Time `json:"end_join_date"` // pointer types
 	Discount        float64    `gorm:"not null" json:"discount"`
 	PhotoUrl        *string    `json:"photo_url,omitempty"`
 	FileUrl         *string    `json:"file_url,omitempty"`
