@@ -109,6 +109,16 @@ func Setup(app *fiber.App) {
     salesAssociates.Put("/:id", handlers.UpdateSalesAssociate)
     salesAssociates.Delete("/:id", handlers.DeleteSalesAssociate)
 
+    // SalesTransactions routes
+    salesTransactions := api.Group("/sales-transactions")
+    salesTransactions.Get("/", handlers.GetAllSalesTransactions)
+    salesTransactions.Get("/:id", handlers.GetSalesTransaction)
+    salesTransactions.Post("/", handlers.CreateSalesTransaction)
+    salesTransactions.Put("/:id", handlers.UpdateSalesTransaction)
+    salesTransactions.Delete("/:id", handlers.DeleteSalesTransaction)
+    salesTransactions.Get("/:id/installments", handlers.GetTransactionInstallments)
+    salesTransactions.Post("/:id/installments", handlers.AddInstallment)
+
     // Admin Only routes
     api.Use(middleware.AdminOnly())
 
