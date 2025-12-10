@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"strings"
 	"pustaka-backend/config"
 	"pustaka-backend/helpers"
 	"pustaka-backend/models"
@@ -27,6 +28,9 @@ func GetAllBooks(c *fiber.Ctx) error {
 	// Get pagination parameters
 	pagination := helpers.GetPaginationParams(c)
 
+	conds := []string{}
+	args := []interface{}{}
+
 	query := config.DB.Order("created_at DESC")
 	queryCount := config.DB.Model(&models.Book{})
 
@@ -40,11 +44,27 @@ func GetAllBooks(c *fiber.Ctx) error {
 	if searchQuery := c.Query("search"); searchQuery != "" {
 		// Wrap string search with wildcard SQL LIKE
 		searchTerm := "%" + searchQuery + "%"
-		cond := "books.name ILIKE ? OR books.description ILIKE ?"
-		args := []interface{}{searchTerm, searchTerm}
+		conds = append(conds, "books.name ILIKE ? OR books.description ILIKE ?")
+		args = append(args, searchTerm, searchTerm)
+	}
 
-		query = query.Where(cond, args...)
-		queryCount = queryCount.Where(cond, args...)
+	// Filter jenis_buku_id
+	if jenisBukuId := c.Query("jenis_buku_id"); jenisBukuId != "" {
+		conds = append(conds, "books.jenis_buku_id = ?")
+		args = append(args, jenisBukuId)
+	}
+
+	// Filter publisher_id
+	if publisherId := c.Query("publisher_id"); publisherId != "" {
+		conds = append(conds, "books.publisher_id = ?")
+		args = append(args, publisherId)
+	}
+
+	// Apply all conditions
+	if len(conds) > 0 {
+		whereClause := strings.Join(conds, " AND ")
+		query = query.Where(whereClause, args...)
+		queryCount = queryCount.Where(whereClause, args...)
 	}
 
 	// Apply pagination and fetch data

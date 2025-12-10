@@ -3,6 +3,7 @@ package helpers
 import (
 	// "fmt"
 	"regexp"
+	"github.com/google/uuid"
 )
 
 func IsValidEmail(email string) bool {
@@ -59,4 +60,13 @@ func IsStrongPassword(password string) bool {
 	}
 
 	return true
+}
+
+// ParseUUID parses a string to UUID
+func ParseUUID(uuidStr string) uuid.UUID {
+	parsedUUID, err := uuid.Parse(uuidStr)
+	if err != nil {
+		return uuid.Nil
+	}
+	return parsedUUID
 }
