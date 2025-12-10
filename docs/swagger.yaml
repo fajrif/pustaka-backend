@@ -1,5 +1,41 @@
 basePath: /
 definitions:
+  handlers.CreateInstallmentRequest:
+    properties:
+      amount:
+        type: number
+      installment_date:
+        type: string
+      note:
+        type: string
+    type: object
+  handlers.CreateTransactionItemRequest:
+    properties:
+      book_id:
+        type: string
+      quantity:
+        type: integer
+    type: object
+  handlers.CreateTransactionRequest:
+    properties:
+      due_date:
+        type: string
+      expedition_id:
+        type: string
+      expedition_price:
+        type: number
+      items:
+        items:
+          $ref: '#/definitions/handlers.CreateTransactionItemRequest'
+        type: array
+      payment_type:
+        description: '''T'' or ''K'''
+        type: string
+      sales_associate_id:
+        type: string
+      transaction_date:
+        type: string
+    type: object
   handlers.LoginRequest:
     properties:
       email:
@@ -16,6 +52,29 @@ definitions:
         type: string
       password:
         example: newpassword123
+        type: string
+    type: object
+  handlers.UpdateTransactionRequest:
+    properties:
+      due_date:
+        type: string
+      expedition_id:
+        type: string
+      expedition_price:
+        type: number
+      items:
+        items:
+          $ref: '#/definitions/handlers.CreateTransactionItemRequest'
+        type: array
+      payment_type:
+        type: string
+      sales_associate_id:
+        type: string
+      status:
+        type: integer
+      total_amount:
+        type: number
+      transaction_date:
         type: string
     type: object
   models.BidangStudi:
@@ -101,6 +160,9 @@ definitions:
         type: string
       city:
         $ref: '#/definitions/models.City'
+      city_code:
+        description: VIRTUAL FIELD (ignored by GORM)
+        type: string
       city_id:
         type: string
       code:
@@ -248,6 +310,7 @@ definitions:
       email:
         type: string
       end_join_date:
+        description: pointer types
         type: string
       file_url:
         type: string
@@ -256,6 +319,7 @@ definitions:
       jenis_pembayaran:
         type: string
       join_date:
+        description: value types
         type: string
       name:
         type: string
@@ -268,6 +332,85 @@ definitions:
       updated_at:
         type: string
       website:
+        type: string
+    type: object
+  models.SalesTransaction:
+    properties:
+      created_at:
+        type: string
+      due_date:
+        type: string
+      expedition:
+        $ref: '#/definitions/models.Expedition'
+      expedition_id:
+        type: string
+      expedition_price:
+        type: number
+      id:
+        type: string
+      installments:
+        items:
+          $ref: '#/definitions/models.SalesTransactionInstallment'
+        type: array
+      items:
+        items:
+          $ref: '#/definitions/models.SalesTransactionItem'
+        type: array
+      no_invoice:
+        type: string
+      payment_type:
+        description: '''T'' for Cash, ''K'' for Credit'
+        type: string
+      sales_associate:
+        $ref: '#/definitions/models.SalesAssociate'
+      sales_associate_id:
+        type: string
+      status:
+        description: 0 = booking, 1 = paid-off, 2 = installment
+        type: integer
+      total_amount:
+        type: number
+      transaction_date:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.SalesTransactionInstallment:
+    properties:
+      amount:
+        type: number
+      created_at:
+        type: string
+      id:
+        type: string
+      installment_date:
+        type: string
+      note:
+        type: string
+      transaction_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.SalesTransactionItem:
+    properties:
+      book:
+        $ref: '#/definitions/models.Book'
+      book_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      price:
+        type: number
+      quantity:
+        type: integer
+      subtotal:
+        type: number
+      transaction_id:
+        type: string
+      updated_at:
         type: string
     type: object
   models.User:
@@ -2404,6 +2547,302 @@ paths:
       summary: Update a sales associate
       tags:
       - SalesAssociates
+  /api/sales-transactions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all sales transactions with their related entities
+      parameters:
+      - description: Search by invoice number or sales associate name
+        in: query
+        name: search
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by status (0=booking, 1=paid-off, 2=installment)
+        in: query
+        name: status
+        type: integer
+      - description: Filter by payment type (T=cash, K=credit)
+        in: query
+        name: payment_type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all sales transactions with pagination
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all sales transactions
+      tags:
+      - Sales Transactions
+    post:
+      consumes:
+      - application/json
+      description: Create a new sales transaction with items and optional installments
+      parameters:
+      - description: Transaction details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateTransactionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created transaction
+          schema:
+            $ref: '#/definitions/models.SalesTransaction'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new sales transaction
+      tags:
+      - Sales Transactions
+  /api/sales-transactions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a sales transaction by ID (this will cascade delete items
+        and installments)
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a sales transaction
+      tags:
+      - Sales Transactions
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single sales transaction by its ID with all related
+        entities
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a sales transaction by ID
+      tags:
+      - Sales Transactions
+    put:
+      consumes:
+      - application/json
+      description: Update an existing sales transaction by ID
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated transaction details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateTransactionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated transaction
+          schema:
+            $ref: '#/definitions/models.SalesTransaction'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a sales transaction
+      tags:
+      - Sales Transactions
+  /api/sales-transactions/{id}/installments:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all installment payments for a specific transaction
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of installments
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all installments for a transaction
+      tags:
+      - Sales Transactions
+    post:
+      consumes:
+      - application/json
+      description: Add a new installment payment to a credit transaction
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Installment details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateInstallmentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created installment
+          schema:
+            $ref: '#/definitions/models.SalesTransactionInstallment'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add an installment to an existing transaction
+      tags:
+      - Sales Transactions
   /api/upload/{resource}/{field}/{id}:
     delete:
       consumes:
