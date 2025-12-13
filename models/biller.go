@@ -1,0 +1,30 @@
+package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type Biller struct {
+	ID          uuid.UUID  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	Code        string     `gorm:"unique;not null" json:"code"`
+	Name        *string    `gorm:"unique" json:"name"`
+	Description *string    `json:"description"`
+	NPWP        string     `gorm:"unique;not null" json:"npwp"`
+	Address     string     `gorm:"not null" json:"address"`
+	CityID      *uuid.UUID `gorm:"type:uuid" json:"city_id"`
+	City        *City      `gorm:"foreignKey:CityID" json:"city,omitempty"`
+	Phone1      string     `gorm:"not null" json:"phone1"`
+	Phone2      *string    `json:"phone2"`
+	Fax         *string    `json:"fax"`
+	Email       *string    `json:"email"`
+	Website     *string    `json:"website"`
+	LogoUrl     *string    `json:"logo_url,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+}
+
+func (Biller) TableName() string {
+	return "billers"
+}

@@ -119,6 +119,14 @@ func Setup(app *fiber.App) {
     salesTransactions.Get("/:id/installments", handlers.GetTransactionInstallments)
     salesTransactions.Post("/:id/installments", handlers.AddInstallment)
 
+    // Billers routes
+    billers := api.Group("/billers")
+    billers.Get("/", handlers.GetAllBillers)
+    billers.Get("/:id", handlers.GetBiller)
+    billers.Post("/", handlers.CreateBiller)
+    billers.Put("/:id", handlers.UpdateBiller)
+    billers.Delete("/:id", handlers.DeleteBiller)
+
     // Admin Only routes
     api.Use(middleware.AdminOnly())
 

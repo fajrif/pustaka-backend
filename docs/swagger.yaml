@@ -92,6 +92,41 @@ definitions:
       updated_at:
         type: string
     type: object
+  models.Biller:
+    properties:
+      address:
+        type: string
+      city:
+        $ref: '#/definitions/models.City'
+      city_id:
+        type: string
+      code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      email:
+        type: string
+      fax:
+        type: string
+      id:
+        type: string
+      logo_url:
+        type: string
+      name:
+        type: string
+      npwp:
+        type: string
+      phone1:
+        type: string
+      phone2:
+        type: string
+      updated_at:
+        type: string
+      website:
+        type: string
+    type: object
   models.Book:
     properties:
       author:
@@ -696,6 +731,205 @@ paths:
       summary: Update a bidang studi
       tags:
       - BidangStudi
+  /api/billers:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all billers with their related city information
+      parameters:
+      - description: Search by code, name, or description
+        in: query
+        name: search
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all billers with pagination
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all billers
+      tags:
+      - Billers
+    post:
+      consumes:
+      - application/json
+      description: Create a new biller entry
+      parameters:
+      - description: Biller details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Biller'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created biller
+          schema:
+            $ref: '#/definitions/models.Biller'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new biller
+      tags:
+      - Billers
+  /api/billers/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a biller by ID
+      parameters:
+      - description: Biller ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Biller deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Biller not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a biller
+      tags:
+      - Billers
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single biller by its ID with related city information
+      parameters:
+      - description: Biller ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Biller details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Biller not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a biller by ID
+      tags:
+      - Billers
+    put:
+      consumes:
+      - application/json
+      description: Update an existing biller by ID
+      parameters:
+      - description: Biller ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated biller details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Biller'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated biller
+          schema:
+            $ref: '#/definitions/models.Biller'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Biller not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a biller
+      tags:
+      - Billers
   /api/books:
     get:
       consumes:
