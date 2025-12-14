@@ -29,14 +29,6 @@ func Setup(app *fiber.App) {
     api.Post("/upload/:resource/:field/:id", handlers.UploadResourceField)
     api.Delete("/upload/:resource/:field/:id", handlers.DeleteResourceField)
 
-    // MerkBuku routes
-    merkBuku := api.Group("/merk-buku")
-    merkBuku.Get("/", handlers.GetAllMerkBuku)
-    merkBuku.Get("/:id", handlers.GetMerkBuku)
-    merkBuku.Post("/", handlers.CreateMerkBuku)
-    merkBuku.Put("/:id", handlers.UpdateMerkBuku)
-    merkBuku.Delete("/:id", handlers.DeleteMerkBuku)
-
     // Cities routes
     cities := api.Group("/cities")
     cities.Get("/", handlers.GetAllCities)
@@ -52,6 +44,14 @@ func Setup(app *fiber.App) {
     expeditions.Post("/", handlers.CreateExpedition)
     expeditions.Put("/:id", handlers.UpdateExpedition)
     expeditions.Delete("/:id", handlers.DeleteExpedition)
+
+    // MerkBuku routes
+    merkBuku := api.Group("/merk-buku")
+    merkBuku.Get("/", handlers.GetAllMerkBuku)
+    merkBuku.Get("/:id", handlers.GetMerkBuku)
+    merkBuku.Post("/", handlers.CreateMerkBuku)
+    merkBuku.Put("/:id", handlers.UpdateMerkBuku)
+    merkBuku.Delete("/:id", handlers.DeleteMerkBuku)
 
     // JenisBuku routes
     jenisBuku := api.Group("/jenis-buku")
