@@ -15,7 +15,7 @@ type Book struct {
 	Periode        int           `gorm:"default:1" json:"periode"`
 	Stock          int           `gorm:"default:0" json:"stock"`
 	MerkBukuID     *uuid.UUID    `gorm:"type:uuid" json:"merk_buku_id"`
-	MerkBuku       *JenisBuku    `gorm:"foreignKey:JenisBukuID" json:"merk_buku,omitempty"`
+	MerkBuku       *MerkBuku     `gorm:"foreignKey:MerkBukuID" json:"merk_buku,omitempty"`
 	JenisBukuID    *uuid.UUID    `gorm:"type:uuid" json:"jenis_buku_id"`
 	JenisBuku      *JenisBuku    `gorm:"foreignKey:JenisBukuID" json:"jenis_buku,omitempty"`
 	JenjangStudiID *uuid.UUID    `gorm:"type:uuid" json:"jenjang_studi_id"`
