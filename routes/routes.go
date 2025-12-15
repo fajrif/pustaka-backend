@@ -116,8 +116,9 @@ func Setup(app *fiber.App) {
     salesTransactions.Post("/", handlers.CreateSalesTransaction)
     salesTransactions.Put("/:id", handlers.UpdateSalesTransaction)
     salesTransactions.Delete("/:id", handlers.DeleteSalesTransaction)
-    salesTransactions.Get("/:id/installments", handlers.GetTransactionInstallments)
-    salesTransactions.Post("/:id/installments", handlers.AddInstallment)
+    salesTransactions.Get("/:transaction_id/installments", handlers.GetTransactionInstallments)
+    salesTransactions.Post("/:transaction_id/installments", handlers.AddInstallment)
+		salesTransactions.Delete("/:transaction_id/installments/:id", handlers.DeleteInstallment)
 
     // Billers routes
     billers := api.Group("/billers")

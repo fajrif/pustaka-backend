@@ -1,9 +1,8 @@
 package handlers
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
+	"strconv"
 	"time"
 
 	"pustaka-backend/config"
@@ -11,13 +10,14 @@ import (
 	"pustaka-backend/models"
 
 	"github.com/gofiber/fiber/v2"
-	// "gorm.io/gorm"
+	"gorm.io/gorm"
 )
 
 // CreateTransactionRequest represents the request body for creating a transaction
 type CreateTransactionRequest struct {
 	SalesAssociateID string                        `json:"sales_associate_id"`
 	ExpeditionID     *string                       `json:"expedition_id"`
+	NoResi           *string                       `json:"no_resi"`
 	PaymentType      string                        `json:"payment_type"` // 'T' or 'K'
 	TransactionDate  time.Time                     `json:"transaction_date"`
 	DueDate          *time.Time                    `json:"due_date"`
@@ -38,13 +38,62 @@ type CreateInstallmentRequest struct {
 	Note            *string   `json:"note"`
 }
 
-// generateInvoiceNumber generates a unique invoice number in format: JL#timestamp#random_hex
-func generateInvoiceNumber() string {
-	timestamp := time.Now().Unix()
-	randomBytes := make([]byte, 4)
-	rand.Read(randomBytes)
-	randomHex := hex.EncodeToString(randomBytes)
-	return fmt.Sprintf("JL%d%s", timestamp, randomHex)
+// generateInvoiceNumber generates sequential invoice number: INV + YYYYMMDD + 8-digit sequence
+// Example: INV2023120500000001
+func generateInvoiceNumber(db *gorm.DB) (string, error) {
+	prefix := "INV"
+	dateStr := time.Now().Format("20060102") // YYYYMMDD
+	pattern := prefix + dateStr + "%"
+
+	var maxNumber string
+	err := db.Model(&models.SalesTransaction{}).
+		Where("no_invoice LIKE ?", pattern).
+		Select("COALESCE(MAX(no_invoice), '')").
+		Scan(&maxNumber).Error
+
+	if err != nil {
+		return "", err
+	}
+
+	nextSeq := 1
+	if maxNumber != "" {
+		// Extract sequence part (last 8 digits)
+		seqStr := maxNumber[len(prefix)+8:] // Skip prefix (3) + date (8)
+		if seq, err := strconv.Atoi(seqStr); err == nil {
+			nextSeq = seq + 1
+		}
+	}
+
+	return fmt.Sprintf("%s%s%08d", prefix, dateStr, nextSeq), nil
+}
+
+// generateInstallmentNumber generates sequential installment number: PKR + YYYYMMDD + 8-digit sequence
+// Example: PKR2023120500000001
+func generateInstallmentNumber(db *gorm.DB) (string, error) {
+	prefix := "PKR"
+	dateStr := time.Now().Format("20060102") // YYYYMMDD
+	pattern := prefix + dateStr + "%"
+
+	var maxNumber string
+	err := db.Model(&models.SalesTransactionInstallment{}).
+		Where("no_installment LIKE ?", pattern).
+		Select("COALESCE(MAX(no_installment), '')").
+		Scan(&maxNumber).Error
+
+	if err != nil {
+		return "", err
+	}
+
+	nextSeq := 1
+	if maxNumber != "" {
+		// Extract sequence part (last 8 digits)
+		seqStr := maxNumber[len(prefix)+8:] // Skip prefix (3) + date (8)
+		if seq, err := strconv.Atoi(seqStr); err == nil {
+			nextSeq = seq + 1
+		}
+	}
+
+	return fmt.Sprintf("%s%s%08d", prefix, dateStr, nextSeq), nil
 }
 
 // GetAllSalesTransactions godoc
@@ -105,6 +154,7 @@ func GetAllSalesTransactions(c *fiber.Ctx) error {
 	// Apply pagination and fetch data
 	if err := query.
 		Offset(pagination.Offset).Limit(pagination.Limit).
+		Preload("Biller").
 		Preload("SalesAssociate").
 		Preload("SalesAssociate.City").
 		Preload("Expedition").
@@ -145,6 +195,7 @@ func GetSalesTransaction(c *fiber.Ctx) error {
 
 	var transaction models.SalesTransaction
 	if err := config.DB.
+		Preload("Biller").
 		Preload("SalesAssociate").
 		Preload("SalesAssociate.City").
 		Preload("Expedition").
@@ -177,6 +228,14 @@ func GetSalesTransaction(c *fiber.Ctx) error {
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/sales-transactions [post]
 func CreateSalesTransaction(c *fiber.Ctx) error {
+	// Get Default Biller ID
+	var defaultBiller models.Biller
+	if err := config.DB.Select("id").First(&defaultBiller).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to get default biller",
+		})
+	}
+
 	var req CreateTransactionRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -257,14 +316,25 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 	// Calculate total amount (items + expedition)
 	totalAmount := totalItemsPrice + req.ExpeditionPrice
 
+	// Generate invoice number
+	noInvoice, err := generateInvoiceNumber(tx)
+	if err != nil {
+		tx.Rollback()
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to generate invoice number",
+		})
+	}
+
 	// Create the transaction
 	transaction := models.SalesTransaction{
+		BillerID:         &defaultBiller.ID,
 		SalesAssociateID: helpers.ParseUUID(req.SalesAssociateID),
-		NoInvoice:        generateInvoiceNumber(),
+		NoInvoice:        noInvoice,
 		PaymentType:      req.PaymentType,
 		TransactionDate:  req.TransactionDate,
 		DueDate:          req.DueDate,
 		ExpeditionPrice:  req.ExpeditionPrice,
+		NoResi:           req.NoResi,
 		TotalAmount:      totalAmount,
 		Status:           0, // Default to booking
 	}
@@ -304,6 +374,7 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 	// Fetch the complete transaction with all relations
 	var createdTransaction models.SalesTransaction
 	config.DB.
+		Preload("Biller").
 		Preload("SalesAssociate").
 		Preload("Expedition").
 		Preload("Items").
@@ -318,6 +389,7 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 type UpdateTransactionRequest struct {
 	SalesAssociateID *string                        `json:"sales_associate_id"`
 	ExpeditionID     *string                        `json:"expedition_id"`
+	NoResi           *string                        `json:"no_resi"`
 	PaymentType      *string                        `json:"payment_type"`
 	TransactionDate  *time.Time                     `json:"transaction_date"`
 	DueDate          *time.Time                     `json:"due_date"`
@@ -350,6 +422,19 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Transaction not found",
 		})
+	}
+
+	// check existing transaction biller id is nil
+	// if nil, then get default biller id from biller table (first record)
+	// set transaction biller id to default biller id
+	if transaction.BillerID == nil {
+		var defaultBiller models.Biller
+		if err := config.DB.Select("id").First(&defaultBiller).Error; err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to get default biller",
+			})
+		}
+		transaction.BillerID = &defaultBiller.ID
 	}
 
 	var req UpdateTransactionRequest
@@ -406,6 +491,10 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 	// Handle expedition_price - can be set to 0
 	if req.ExpeditionPrice != nil {
 		updates["expedition_price"] = *req.ExpeditionPrice
+	}
+
+	if req.NoResi != nil {
+		updates["no_resi"] = *req.NoResi
 	}
 
 	if req.Status != nil {
@@ -545,6 +634,7 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 
 	// Fetch the updated transaction with all relations
 	config.DB.
+		Preload("Biller").
 		Preload("SalesAssociate").
 		Preload("Expedition").
 		Preload("Items").
@@ -596,16 +686,16 @@ func DeleteSalesTransaction(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "Transaction ID (UUID)"
+// @Param transaction_id path string true "Transaction ID (UUID)"
 // @Param request body CreateInstallmentRequest true "Installment details"
 // @Success 201 {object} models.SalesTransactionInstallment "Created installment"
 // @Failure 400 {object} map[string]interface{} "Invalid request body"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 404 {object} map[string]interface{} "Transaction not found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /api/sales-transactions/{id}/installments [post]
+// @Router /api/sales-transactions/{transaction_id}/installments [post]
 func AddInstallment(c *fiber.Ctx) error {
-	id := c.Params("id")
+	id := c.Params("transaction_id")
 
 	// Verify transaction exists and is a credit transaction
 	var transaction models.SalesTransaction
@@ -635,8 +725,17 @@ func AddInstallment(c *fiber.Ctx) error {
 		})
 	}
 
+	// Generate installment number
+	noInstallment, err := generateInstallmentNumber(config.DB)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to generate installment number",
+		})
+	}
+
 	installment := models.SalesTransactionInstallment{
 		TransactionID:   transaction.ID,
+		NoInstallment:   noInstallment,
 		InstallmentDate: req.InstallmentDate,
 		Amount:          req.Amount,
 		Note:            req.Note,
@@ -671,14 +770,14 @@ func AddInstallment(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "Transaction ID (UUID)"
+// @Param transaction_id path string true "Transaction ID (UUID)"
 // @Success 200 {object} map[string]interface{} "List of installments"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 404 {object} map[string]interface{} "Transaction not found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /api/sales-transactions/{id}/installments [get]
+// @Router /api/sales-transactions/{transaction_id}/installments [get]
 func GetTransactionInstallments(c *fiber.Ctx) error {
-	id := c.Params("id")
+	id := c.Params("transaction_id")
 
 	// Verify transaction exists
 	var transaction models.SalesTransaction
@@ -710,5 +809,42 @@ func GetTransactionInstallments(c *fiber.Ctx) error {
 		"total_paid":     totalPaid,
 		"remaining":      transaction.TotalAmount - totalPaid,
 		"installments":   installments,
+	})
+}
+
+// DeleteInstallment godoc
+// @Summary Delete a sales transaction installment
+// @Description Delete a sales transaction installment by ID
+// @Tags Sales Transactions
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param transaction_id path string true "Transaction ID (UUID)"
+// @Success 200 {object} map[string]interface{} "Transaction deleted successfully"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "Transaction not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/sales-transactions/{transaction_id}/installments/{id} [delete]
+func DeleteInstallment(c *fiber.Ctx) error {
+	id := c.Params("id")
+	transactionID := c.Params("transaction_id")
+
+	result := config.DB.
+		Where("id = ? AND sales_transaction_id = ?", id, transactionID).
+		Delete(&models.SalesTransactionInstallment{})
+	if result.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to delete installment",
+		})
+	}
+
+	if result.RowsAffected == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Installment not found",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Installment deleted successfully",
 	})
 }
