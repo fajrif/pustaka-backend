@@ -56,6 +56,7 @@ func runAllSeeders() {
 		{"jenjang_studi", func() error { return seeds.JenjangStudiSeeder(config.DB) }},
 		{"expeditions", func() error { return seeds.ExpeditionsSeeder(config.DB) }},
 		{"sales_associates", func() error { return seeds.SalesAssociateSeeder(config.DB) }},
+		{"merk_buku", func() error { return seeds.MerkBukuSeeder(config.DB) }},
 	}
 
 	for _, seeder := range seeders {
@@ -85,8 +86,10 @@ func runSpecificSeeder(name string) {
 	  err = seeds.ExpeditionsSeeder(config.DB)
 	case "sales_associates":
 	  err = seeds.SalesAssociateSeeder(config.DB)
+	case "merk_buku":
+	  err = seeds.MerkBukuSeeder(config.DB)
 	default:
-		log.Fatalf("❌ Unknown seeder: %s\n\nAvailable seeders:\n  - jenis_buku, kelas, bidang_studi, jenjang_studi, cities, expeditions, sales_associates\n", name)
+		log.Fatalf("❌ Unknown seeder: %s\n\nAvailable seeders:\n  - jenis_buku, kelas, bidang_studi, jenjang_studi, cities, expeditions, sales_associates, merk_buku\n", name)
 	}
 
 	if err != nil {
