@@ -70,6 +70,7 @@ func GetAllBooks(c *fiber.Ctx) error {
 	// Apply pagination and fetch data
 	if err := query.
 		Offset(pagination.Offset).Limit(pagination.Limit).
+		Preload("MerkBuku").
 		Preload("JenisBuku").
 		Preload("JenjangStudi").
 		Preload("BidangStudi").
@@ -110,6 +111,7 @@ func GetBook(c *fiber.Ctx) error {
 
 	var book models.Book
 	if err := config.DB.
+		Preload("MerkBuku").
 		Preload("JenisBuku").
 		Preload("JenjangStudi").
 		Preload("BidangStudi").

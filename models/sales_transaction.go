@@ -7,10 +7,13 @@ import (
 
 type SalesTransaction struct {
 	ID                uuid.UUID                    `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	BillerID          *uuid.UUID                   `gorm:"type:uuid" json:"biller_id"`
+	Biller            *Biller                      `gorm:"foreignKey:BillerID" json:"biller,omitempty"`
 	SalesAssociateID  uuid.UUID                    `gorm:"type:uuid;not null" json:"sales_associate_id"`
 	SalesAssociate    *SalesAssociate              `gorm:"foreignKey:SalesAssociateID" json:"sales_associate,omitempty"`
 	ExpeditionID      *uuid.UUID                   `gorm:"type:uuid" json:"expedition_id"`
 	Expedition        *Expedition                  `gorm:"foreignKey:ExpeditionID" json:"expedition,omitempty"`
+	NoResi            *string                      `json:"no_resi"`
 	NoInvoice         string                       `gorm:"unique;not null" json:"no_invoice"`
 	PaymentType       string                       `gorm:"default:'T';not null" json:"payment_type"` // 'T' for Cash, 'K' for Credit
 	TransactionDate   time.Time                    `gorm:"not null" json:"transaction_date"`

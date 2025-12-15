@@ -9,6 +9,7 @@ type SalesAssociate struct {
 	ID              uuid.UUID  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	Code            string     `gorm:"unique;not null" json:"code"`
 	Name            string     `gorm:"not null" json:"name"`
+	NoKtp           *string    `json:"no_ktp"`
 	Description     *string    `json:"description"`
 	Address         string     `gorm:"not null" json:"address"`
 	CityID          *uuid.UUID `gorm:"type:uuid" json:"city_id"`

@@ -29,14 +29,6 @@ func Setup(app *fiber.App) {
     api.Post("/upload/:resource/:field/:id", handlers.UploadResourceField)
     api.Delete("/upload/:resource/:field/:id", handlers.DeleteResourceField)
 
-    // MerkBuku routes
-    merkBuku := api.Group("/merk-buku")
-    merkBuku.Get("/", handlers.GetAllMerkBuku)
-    merkBuku.Get("/:id", handlers.GetMerkBuku)
-    merkBuku.Post("/", handlers.CreateMerkBuku)
-    merkBuku.Put("/:id", handlers.UpdateMerkBuku)
-    merkBuku.Delete("/:id", handlers.DeleteMerkBuku)
-
     // Cities routes
     cities := api.Group("/cities")
     cities.Get("/", handlers.GetAllCities)
@@ -52,6 +44,14 @@ func Setup(app *fiber.App) {
     expeditions.Post("/", handlers.CreateExpedition)
     expeditions.Put("/:id", handlers.UpdateExpedition)
     expeditions.Delete("/:id", handlers.DeleteExpedition)
+
+    // MerkBuku routes
+    merkBuku := api.Group("/merk-buku")
+    merkBuku.Get("/", handlers.GetAllMerkBuku)
+    merkBuku.Get("/:id", handlers.GetMerkBuku)
+    merkBuku.Post("/", handlers.CreateMerkBuku)
+    merkBuku.Put("/:id", handlers.UpdateMerkBuku)
+    merkBuku.Delete("/:id", handlers.DeleteMerkBuku)
 
     // JenisBuku routes
     jenisBuku := api.Group("/jenis-buku")
@@ -116,8 +116,17 @@ func Setup(app *fiber.App) {
     salesTransactions.Post("/", handlers.CreateSalesTransaction)
     salesTransactions.Put("/:id", handlers.UpdateSalesTransaction)
     salesTransactions.Delete("/:id", handlers.DeleteSalesTransaction)
-    salesTransactions.Get("/:id/installments", handlers.GetTransactionInstallments)
-    salesTransactions.Post("/:id/installments", handlers.AddInstallment)
+    salesTransactions.Get("/:transaction_id/installments", handlers.GetTransactionInstallments)
+    salesTransactions.Post("/:transaction_id/installments", handlers.AddInstallment)
+		salesTransactions.Delete("/:transaction_id/installments/:id", handlers.DeleteInstallment)
+
+    // Billers routes
+    billers := api.Group("/billers")
+    billers.Get("/", handlers.GetAllBillers)
+    billers.Get("/:id", handlers.GetBiller)
+    billers.Post("/", handlers.CreateBiller)
+    billers.Put("/:id", handlers.UpdateBiller)
+    billers.Delete("/:id", handlers.DeleteBiller)
 
     // Admin Only routes
     api.Use(middleware.AdminOnly())

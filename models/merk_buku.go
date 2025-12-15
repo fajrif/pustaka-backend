@@ -5,15 +5,15 @@ import (
 	"github.com/google/uuid"
 )
 
-// MerkBuku represents a book brand/publisher
+// MerkBuku represents a book brand
 type MerkBuku struct {
-	ID             uuid.UUID `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	KodeMerk       *string   `gorm:"column:kode_merk;not null" json:"kode_merk"`
-	NamaMerk       *string   `gorm:"column:nama_merk;not null" json:"nama_merk"`
+	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	Code        string    `gorm:"unique;not null" json:"code"`
+	Name        string    `gorm:"unique;not null" json:"name"`
+	Description *string   `json:"description"`
 	BantuanPromosi *int      `json:"bantuan_promosi"`
-	UserID         uuid.UUID `gorm:"type:uuid" json:"user_id"`
-	User           User 		 `gorm:"foreignKey:UserID" json:"user_details"`
-	Tstamp         time.Time `json:"tstamp" db:"tstamp"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 func (MerkBuku) TableName() string {
