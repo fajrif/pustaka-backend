@@ -2610,7 +2610,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve all book brands (merk buku) ordered by creation date",
+                "description": "Retrieve all book types (merk buku) ordered by creation date",
                 "consumes": [
                     "application/json"
                 ],
@@ -2621,9 +2621,29 @@ const docTemplate = `{
                     "MerkBuku"
                 ],
                 "summary": "Get all merk buku",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by code, name, or description",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "List of all merk buku",
+                        "description": "List of all merk buku with pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2651,7 +2671,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new book brand",
+                "description": "Create a new book type entry",
                 "consumes": [
                     "application/json"
                 ],
@@ -2711,7 +2731,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve a single book brand by its ID",
+                "description": "Retrieve a single book type by its ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -2761,7 +2781,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update an existing book brand by ID",
+                "description": "Update an existing book type by ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -2833,7 +2853,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete a book brand by ID",
+                "description": "Delete a book type by ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -3751,7 +3771,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete a sales transaction by ID (this will cascade delete items and installments)",
+                "description": "Delete a sales transaction by ID (this will cascade delete items, payments, and shippings). Stock is restored for all items.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3803,7 +3823,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/sales-transactions/{id}/installments": {
+        "/api/sales-transactions/{transaction_id}/installments": {
             "get": {
                 "security": [
                     {
@@ -3825,7 +3845,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Transaction ID (UUID)",
-                        "name": "id",
+                        "name": "transaction_id",
                         "in": "path",
                         "required": true
                     }
@@ -3882,7 +3902,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Transaction ID (UUID)",
-                        "name": "id",
+                        "name": "transaction_id",
                         "in": "path",
                         "required": true
                     },
@@ -3919,6 +3939,541 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Transaction not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sales-transactions/{transaction_id}/installments/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a sales transaction installment by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sales Transactions"
+                ],
+                "summary": "Delete a sales transaction installment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID (UUID)",
+                        "name": "transaction_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction deleted successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Transaction not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sales-transactions/{transaction_id}/payments": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve all payments for a specific sales transaction",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get all payments for a transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID (UUID)",
+                        "name": "transaction_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of payments with summary",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Transaction not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Add a payment to a sales transaction. Validates that total payments don't exceed transaction total.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Create a new payment for a transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID (UUID)",
+                        "name": "transaction_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payment details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreatePaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created payment with transaction summary",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Transaction not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sales-transactions/{transaction_id}/payments/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a payment from a sales transaction. Updates transaction status accordingly.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Delete a payment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID (UUID)",
+                        "name": "transaction_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Payment ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment deleted successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Payment not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sales-transactions/{transaction_id}/shippings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve all shippings for a specific sales transaction",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Shippings"
+                ],
+                "summary": "Get all shippings for a transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID (UUID)",
+                        "name": "transaction_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of shippings with total",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Transaction not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Add a shipping entry to a sales transaction. Automatically updates transaction total.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Shippings"
+                ],
+                "summary": "Create a new shipping for a transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID (UUID)",
+                        "name": "transaction_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Shipping details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateShippingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created shipping with updated transaction total",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or validation error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Transaction or expedition not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sales-transactions/{transaction_id}/shippings/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update a shipping entry. Recalculates transaction total if amount changes.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Shippings"
+                ],
+                "summary": "Update a shipping",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID (UUID)",
+                        "name": "transaction_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Shipping ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated shipping details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UpdateShippingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated shipping with transaction total",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Shipping or expedition not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a shipping entry from a sales transaction. Subtracts shipping cost from transaction total.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Shippings"
+                ],
+                "summary": "Delete a shipping",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID (UUID)",
+                        "name": "transaction_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Shipping ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Shipping deleted successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Shipping not found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -4433,6 +4988,34 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.CreatePaymentRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "payment_date": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.CreateShippingRequest": {
+            "type": "object",
+            "properties": {
+                "expedition_id": {
+                    "type": "string"
+                },
+                "no_resi": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "number"
+                }
+            }
+        },
         "handlers.CreateTransactionItemRequest": {
             "type": "object",
             "properties": {
@@ -4449,12 +5032,6 @@ const docTemplate = `{
             "properties": {
                 "due_date": {
                     "type": "string"
-                },
-                "expedition_id": {
-                    "type": "string"
-                },
-                "expedition_price": {
-                    "type": "number"
                 },
                 "items": {
                     "type": "array",
@@ -4500,17 +5077,25 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.UpdateShippingRequest": {
+            "type": "object",
+            "properties": {
+                "expedition_id": {
+                    "type": "string"
+                },
+                "no_resi": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "number"
+                }
+            }
+        },
         "handlers.UpdateTransactionRequest": {
             "type": "object",
             "properties": {
                 "due_date": {
                     "type": "string"
-                },
-                "expedition_id": {
-                    "type": "string"
-                },
-                "expedition_price": {
-                    "type": "number"
                 },
                 "items": {
                     "type": "array",
@@ -4526,9 +5111,6 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "integer"
-                },
-                "total_amount": {
-                    "type": "number"
                 },
                 "transaction_date": {
                     "type": "string"
@@ -4659,8 +5241,17 @@ const docTemplate = `{
                 "kelas_id": {
                     "type": "string"
                 },
+                "merk_buku": {
+                    "$ref": "#/definitions/models.MerkBuku"
+                },
+                "merk_buku_id": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
+                },
+                "periode": {
+                    "type": "integer"
                 },
                 "price": {
                     "type": "number"
@@ -4837,22 +5428,51 @@ const docTemplate = `{
                 "bantuan_promosi": {
                     "type": "integer"
                 },
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
-                "kode_merk": {
+                "name": {
                     "type": "string"
                 },
-                "nama_merk": {
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Payment": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "created_at": {
                     "type": "string"
                 },
-                "tstamp": {
+                "id": {
                     "type": "string"
                 },
-                "user_details": {
-                    "$ref": "#/definitions/models.User"
+                "no_payment": {
+                    "type": "string"
                 },
-                "user_id": {
+                "note": {
+                    "type": "string"
+                },
+                "payment_date": {
+                    "type": "string"
+                },
+                "sales_transaction_id": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -4960,6 +5580,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "no_ktp": {
+                    "type": "string"
+                },
                 "phone1": {
                     "type": "string"
                 },
@@ -4980,29 +5603,20 @@ const docTemplate = `{
         "models.SalesTransaction": {
             "type": "object",
             "properties": {
+                "biller": {
+                    "$ref": "#/definitions/models.Biller"
+                },
+                "biller_id": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
                 "due_date": {
                     "type": "string"
                 },
-                "expedition": {
-                    "$ref": "#/definitions/models.Expedition"
-                },
-                "expedition_id": {
-                    "type": "string"
-                },
-                "expedition_price": {
-                    "type": "number"
-                },
                 "id": {
                     "type": "string"
-                },
-                "installments": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.SalesTransactionInstallment"
-                    }
                 },
                 "items": {
                     "type": "array",
@@ -5017,11 +5631,23 @@ const docTemplate = `{
                     "description": "'T' for Cash, 'K' for Credit",
                     "type": "string"
                 },
+                "payments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Payment"
+                    }
+                },
                 "sales_associate": {
                     "$ref": "#/definitions/models.SalesAssociate"
                 },
                 "sales_associate_id": {
                     "type": "string"
+                },
+                "shippings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Shipping"
+                    }
                 },
                 "status": {
                     "description": "0 = booking, 1 = paid-off, 2 = installment",
@@ -5051,6 +5677,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "installment_date": {
+                    "type": "string"
+                },
+                "no_installment": {
                     "type": "string"
                 },
                 "note": {
@@ -5090,6 +5719,35 @@ const docTemplate = `{
                 },
                 "transaction_id": {
                     "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Shipping": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "expedition": {
+                    "$ref": "#/definitions/models.Expedition"
+                },
+                "expedition_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "no_resi": {
+                    "type": "string"
+                },
+                "sales_transaction_id": {
+                    "type": "string"
+                },
+                "total_amount": {
+                    "type": "number"
                 },
                 "updated_at": {
                     "type": "string"

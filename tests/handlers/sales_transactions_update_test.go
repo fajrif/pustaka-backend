@@ -90,14 +90,25 @@ func getEnvOrDefault(key, defaultValue string) string {
 	return defaultValue
 }
 
-// cleanupTestData removes test data from database
+// cleanupTestData removes test data from database and restores book stock
 func cleanupTestData(transactionID uuid.UUID) {
-	config.DB.Exec("DELETE FROM sales_transaction_installments WHERE transaction_id = ?", transactionID)
+	// First get the items to restore stock
+	var items []models.SalesTransactionItem
+	config.DB.Where("transaction_id = ?", transactionID).Find(&items)
+
+	// Restore stock for each item
+	for _, item := range items {
+		config.DB.Exec("UPDATE books SET stock = stock + ? WHERE id = ?", item.Quantity, item.BookID)
+	}
+
+	// Delete related records
+	config.DB.Exec("DELETE FROM payments WHERE sales_transaction_id = ?", transactionID)
+	config.DB.Exec("DELETE FROM shippings WHERE sales_transaction_id = ?", transactionID)
 	config.DB.Exec("DELETE FROM sales_transaction_items WHERE transaction_id = ?", transactionID)
 	config.DB.Exec("DELETE FROM sales_transactions WHERE id = ?", transactionID)
 }
 
-func TestUpdateSalesTransaction_Scenario1_UpdateExpedition(t *testing.T) {
+func TestUpdateSalesTransaction_Scenario1_CreateTransaction(t *testing.T) {
 	setupIntegrationTest(t)
 
 	app := fiber.New()
@@ -111,25 +122,18 @@ func TestUpdateSalesTransaction_Scenario1_UpdateExpedition(t *testing.T) {
 		t.Skipf("Skipping test: no sales associate found in database: %v", err)
 	}
 
-	// Fetch an expedition from DB for testing
-	var expedition models.Expedition
-	if err := config.DB.First(&expedition).Error; err != nil {
-		t.Skipf("Skipping test: no expedition found in database: %v", err)
-	}
-
-	// Fetch a book from DB for testing
+	// Fetch a book from DB for testing (need at least 5 stock for safety)
 	var book models.Book
-	if err := config.DB.First(&book).Error; err != nil {
-		t.Skipf("Skipping test: no book found in database: %v", err)
+	if err := config.DB.Where("stock >= ?", 5).First(&book).Error; err != nil {
+		t.Skipf("Skipping test: no book with sufficient stock found in database: %v", err)
 	}
 
-	// Step 1: Create transaction without expedition
-	t.Run("Step 1: Create transaction without expedition", func(t *testing.T) {
+	// Step 1: Create transaction
+	t.Run("Step 1: Create transaction", func(t *testing.T) {
 		createReq := handlers.CreateTransactionRequest{
 			SalesAssociateID: salesAssociate.ID.String(),
 			PaymentType:      "T",
 			TransactionDate:  time.Now(),
-			ExpeditionPrice:  0,
 			Items: []handlers.CreateTransactionItemRequest{
 				{
 					BookID:   book.ID.String(),
@@ -150,23 +154,17 @@ func TestUpdateSalesTransaction_Scenario1_UpdateExpedition(t *testing.T) {
 		json.Unmarshal(respBody, &createdTransaction)
 
 		assert.NotEqual(t, uuid.Nil, createdTransaction.ID)
-
-		// fmt.Printf("Transaction: %+v\n", createdTransaction)
-
-		assert.Nil(t, createdTransaction.ExpeditionID)
-		assert.Equal(t, float64(0), createdTransaction.ExpeditionPrice)
+		assert.Equal(t, book.Price, createdTransaction.TotalAmount)
 
 		// Store for cleanup
 		defer cleanupTestData(createdTransaction.ID)
 
-		// Step 2: Update with expedition
-		t.Run("Step 2: Update with expedition", func(t *testing.T) {
-			expeditionID := expedition.ID.String()
-			expeditionPrice := float64(20000)
+		// Step 2: Update status
+		t.Run("Step 2: Update status", func(t *testing.T) {
+			status := 1
 
 			updateReq := handlers.UpdateTransactionRequest{
-				ExpeditionID:    &expeditionID,
-				ExpeditionPrice: &expeditionPrice,
+				Status: &status,
 			}
 
 			bodyBytes, _ := json.Marshal(updateReq)
@@ -180,42 +178,7 @@ func TestUpdateSalesTransaction_Scenario1_UpdateExpedition(t *testing.T) {
 			respBody, _ := io.ReadAll(resp.Body)
 			json.Unmarshal(respBody, &updatedTransaction)
 
-			assert.NotNil(t, updatedTransaction.ExpeditionID)
-			assert.Equal(t, expedition.ID, *updatedTransaction.ExpeditionID)
-			assert.Equal(t, float64(20000), updatedTransaction.ExpeditionPrice)
-
-			// Verify total_amount includes expedition price
-			expectedTotal := book.Price + 20000
-			assert.Equal(t, expectedTotal, updatedTransaction.TotalAmount)
-
-			// Step 3: Update to remove expedition (set to nil and 0)
-			t.Run("Step 3: Remove expedition", func(t *testing.T) {
-				emptyExpeditionID := ""
-				zeroExpeditionPrice := float64(0)
-
-				updateReq := handlers.UpdateTransactionRequest{
-					ExpeditionID:    &emptyExpeditionID,
-					ExpeditionPrice: &zeroExpeditionPrice,
-				}
-
-				bodyBytes, _ := json.Marshal(updateReq)
-				req := httptest.NewRequest("PUT", fmt.Sprintf("/sales-transactions/%s", createdTransaction.ID), bytes.NewReader(bodyBytes))
-				req.Header.Set("Content-Type", "application/json")
-				resp, _ := app.Test(req)
-
-				assert.Equal(t, fiber.StatusOK, resp.StatusCode)
-
-				var finalTransaction models.SalesTransaction
-				respBody, _ := io.ReadAll(resp.Body)
-				json.Unmarshal(respBody, &finalTransaction)
-
-				assert.Nil(t, finalTransaction.ExpeditionID)
-				assert.Equal(t, float64(0), finalTransaction.ExpeditionPrice)
-
-				// Verify total_amount no longer includes expedition price
-				expectedTotal := book.Price
-				assert.Equal(t, expectedTotal, finalTransaction.TotalAmount)
-			})
+			assert.Equal(t, 1, updatedTransaction.Status)
 		})
 	})
 }
@@ -234,10 +197,10 @@ func TestUpdateSalesTransaction_Scenario2_UpdateItems(t *testing.T) {
 		t.Skipf("Skipping test: no sales associate found in database: %v", err)
 	}
 
-	// Fetch books from DB for testing (need at least 2)
+	// Fetch books from DB for testing (need at least 2 books with sufficient stock)
 	var books []models.Book
-	if err := config.DB.Limit(2).Find(&books).Error; err != nil || len(books) < 2 {
-		t.Skipf("Skipping test: need at least 2 books in database")
+	if err := config.DB.Where("stock >= ?", 10).Limit(2).Find(&books).Error; err != nil || len(books) < 2 {
+		t.Skipf("Skipping test: need at least 2 books with sufficient stock (>=10) in database")
 	}
 	bookX := books[0]
 	bookY := books[1]
@@ -248,7 +211,6 @@ func TestUpdateSalesTransaction_Scenario2_UpdateItems(t *testing.T) {
 			SalesAssociateID: salesAssociate.ID.String(),
 			PaymentType:      "T",
 			TransactionDate:  time.Now(),
-			ExpeditionPrice:  0,
 			Items: []handlers.CreateTransactionItemRequest{
 				{
 					BookID:   bookX.ID.String(),
@@ -406,8 +368,8 @@ func TestUpdateSalesTransaction_DuplicateBookIDValidation(t *testing.T) {
 	}
 
 	var book models.Book
-	if err := config.DB.First(&book).Error; err != nil {
-		t.Skipf("Skipping test: no book found in database: %v", err)
+	if err := config.DB.Where("stock >= ?", 5).First(&book).Error; err != nil {
+		t.Skipf("Skipping test: no book with sufficient stock found in database: %v", err)
 	}
 
 	// Create a transaction
@@ -415,7 +377,6 @@ func TestUpdateSalesTransaction_DuplicateBookIDValidation(t *testing.T) {
 		SalesAssociateID: salesAssociate.ID.String(),
 		PaymentType:      "T",
 		TransactionDate:  time.Now(),
-		ExpeditionPrice:  0,
 		Items: []handlers.CreateTransactionItemRequest{
 			{
 				BookID:   book.ID.String(),

@@ -116,9 +116,17 @@ func Setup(app *fiber.App) {
     salesTransactions.Post("/", handlers.CreateSalesTransaction)
     salesTransactions.Put("/:id", handlers.UpdateSalesTransaction)
     salesTransactions.Delete("/:id", handlers.DeleteSalesTransaction)
-    salesTransactions.Get("/:transaction_id/installments", handlers.GetTransactionInstallments)
-    salesTransactions.Post("/:transaction_id/installments", handlers.AddInstallment)
-		salesTransactions.Delete("/:transaction_id/installments/:id", handlers.DeleteInstallment)
+
+    // Payments routes (nested under sales-transactions)
+    salesTransactions.Get("/:transaction_id/payments", handlers.GetTransactionPayments)
+    salesTransactions.Post("/:transaction_id/payments", handlers.CreatePayment)
+    salesTransactions.Delete("/:transaction_id/payments/:id", handlers.DeletePayment)
+
+    // Shippings routes (nested under sales-transactions)
+    salesTransactions.Get("/:transaction_id/shippings", handlers.GetTransactionShippings)
+    salesTransactions.Post("/:transaction_id/shippings", handlers.CreateShipping)
+    salesTransactions.Put("/:transaction_id/shippings/:id", handlers.UpdateShipping)
+    salesTransactions.Delete("/:transaction_id/shippings/:id", handlers.DeleteShipping)
 
     // Billers routes
     billers := api.Group("/billers")

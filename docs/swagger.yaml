@@ -9,6 +9,24 @@ definitions:
       note:
         type: string
     type: object
+  handlers.CreatePaymentRequest:
+    properties:
+      amount:
+        type: number
+      note:
+        type: string
+      payment_date:
+        type: string
+    type: object
+  handlers.CreateShippingRequest:
+    properties:
+      expedition_id:
+        type: string
+      no_resi:
+        type: string
+      total_amount:
+        type: number
+    type: object
   handlers.CreateTransactionItemRequest:
     properties:
       book_id:
@@ -20,10 +38,6 @@ definitions:
     properties:
       due_date:
         type: string
-      expedition_id:
-        type: string
-      expedition_price:
-        type: number
       items:
         items:
           $ref: '#/definitions/handlers.CreateTransactionItemRequest'
@@ -54,14 +68,19 @@ definitions:
         example: newpassword123
         type: string
     type: object
+  handlers.UpdateShippingRequest:
+    properties:
+      expedition_id:
+        type: string
+      no_resi:
+        type: string
+      total_amount:
+        type: number
+    type: object
   handlers.UpdateTransactionRequest:
     properties:
       due_date:
         type: string
-      expedition_id:
-        type: string
-      expedition_price:
-        type: number
       items:
         items:
           $ref: '#/definitions/handlers.CreateTransactionItemRequest'
@@ -72,8 +91,6 @@ definitions:
         type: string
       status:
         type: integer
-      total_amount:
-        type: number
       transaction_date:
         type: string
     type: object
@@ -159,8 +176,14 @@ definitions:
         $ref: '#/definitions/models.Kelas'
       kelas_id:
         type: string
+      merk_buku:
+        $ref: '#/definitions/models.MerkBuku'
+      merk_buku_id:
+        type: string
       name:
         type: string
+      periode:
+        type: integer
       price:
         type: number
       publisher:
@@ -276,17 +299,36 @@ definitions:
     properties:
       bantuan_promosi:
         type: integer
+      code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
       id:
         type: string
-      kode_merk:
+      name:
         type: string
-      nama_merk:
+      updated_at:
         type: string
-      tstamp:
+    type: object
+  models.Payment:
+    properties:
+      amount:
+        type: number
+      created_at:
         type: string
-      user_details:
-        $ref: '#/definitions/models.User'
-      user_id:
+      id:
+        type: string
+      no_payment:
+        type: string
+      note:
+        type: string
+      payment_date:
+        type: string
+      sales_transaction_id:
+        type: string
+      updated_at:
         type: string
     type: object
   models.Publisher:
@@ -358,6 +400,8 @@ definitions:
         type: string
       name:
         type: string
+      no_ktp:
+        type: string
       phone1:
         type: string
       phone2:
@@ -371,22 +415,16 @@ definitions:
     type: object
   models.SalesTransaction:
     properties:
+      biller:
+        $ref: '#/definitions/models.Biller'
+      biller_id:
+        type: string
       created_at:
         type: string
       due_date:
         type: string
-      expedition:
-        $ref: '#/definitions/models.Expedition'
-      expedition_id:
-        type: string
-      expedition_price:
-        type: number
       id:
         type: string
-      installments:
-        items:
-          $ref: '#/definitions/models.SalesTransactionInstallment'
-        type: array
       items:
         items:
           $ref: '#/definitions/models.SalesTransactionItem'
@@ -396,10 +434,18 @@ definitions:
       payment_type:
         description: '''T'' for Cash, ''K'' for Credit'
         type: string
+      payments:
+        items:
+          $ref: '#/definitions/models.Payment'
+        type: array
       sales_associate:
         $ref: '#/definitions/models.SalesAssociate'
       sales_associate_id:
         type: string
+      shippings:
+        items:
+          $ref: '#/definitions/models.Shipping'
+        type: array
       status:
         description: 0 = booking, 1 = paid-off, 2 = installment
         type: integer
@@ -419,6 +465,8 @@ definitions:
       id:
         type: string
       installment_date:
+        type: string
+      no_installment:
         type: string
       note:
         type: string
@@ -445,6 +493,25 @@ definitions:
         type: number
       transaction_id:
         type: string
+      updated_at:
+        type: string
+    type: object
+  models.Shipping:
+    properties:
+      created_at:
+        type: string
+      expedition:
+        $ref: '#/definitions/models.Expedition'
+      expedition_id:
+        type: string
+      id:
+        type: string
+      no_resi:
+        type: string
+      sales_transaction_id:
+        type: string
+      total_amount:
+        type: number
       updated_at:
         type: string
     type: object
@@ -2201,12 +2268,25 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieve all book brands (merk buku) ordered by creation date
+      description: Retrieve all book types (merk buku) ordered by creation date
+      parameters:
+      - description: Search by code, name, or description
+        in: query
+        name: search
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: List of all merk buku
+          description: List of all merk buku with pagination
           schema:
             additionalProperties: true
             type: object
@@ -2228,7 +2308,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new book brand
+      description: Create a new book type entry
       parameters:
       - description: MerkBuku details
         in: body
@@ -2267,7 +2347,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete a book brand by ID
+      description: Delete a book type by ID
       parameters:
       - description: MerkBuku ID (UUID)
         in: path
@@ -2305,7 +2385,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieve a single book brand by its ID
+      description: Retrieve a single book type by its ID
       parameters:
       - description: MerkBuku ID (UUID)
         in: path
@@ -2338,7 +2418,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update an existing book brand by ID
+      description: Update an existing book type by ID
       parameters:
       - description: MerkBuku ID (UUID)
         in: path
@@ -2872,8 +2952,8 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete a sales transaction by ID (this will cascade delete items
-        and installments)
+      description: Delete a sales transaction by ID (this will cascade delete items,
+        payments, and shippings). Stock is restored for all items.
       parameters:
       - description: Transaction ID (UUID)
         in: path
@@ -2990,7 +3070,7 @@ paths:
       summary: Update a sales transaction
       tags:
       - Sales Transactions
-  /api/sales-transactions/{id}/installments:
+  /api/sales-transactions/{transaction_id}/installments:
     get:
       consumes:
       - application/json
@@ -2998,7 +3078,7 @@ paths:
       parameters:
       - description: Transaction ID (UUID)
         in: path
-        name: id
+        name: transaction_id
         required: true
         type: string
       produces:
@@ -3036,7 +3116,7 @@ paths:
       parameters:
       - description: Transaction ID (UUID)
         in: path
-        name: id
+        name: transaction_id
         required: true
         type: string
       - description: Installment details
@@ -3077,6 +3157,368 @@ paths:
       summary: Add an installment to an existing transaction
       tags:
       - Sales Transactions
+  /api/sales-transactions/{transaction_id}/installments/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a sales transaction installment by ID
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: transaction_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a sales transaction installment
+      tags:
+      - Sales Transactions
+  /api/sales-transactions/{transaction_id}/payments:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all payments for a specific sales transaction
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: transaction_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of payments with summary
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all payments for a transaction
+      tags:
+      - Payments
+    post:
+      consumes:
+      - application/json
+      description: Add a payment to a sales transaction. Validates that total payments
+        don't exceed transaction total.
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: transaction_id
+        required: true
+        type: string
+      - description: Payment details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreatePaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created payment with transaction summary
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body or validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new payment for a transaction
+      tags:
+      - Payments
+  /api/sales-transactions/{transaction_id}/payments/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a payment from a sales transaction. Updates transaction
+        status accordingly.
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: transaction_id
+        required: true
+        type: string
+      - description: Payment ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Payment deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Payment not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a payment
+      tags:
+      - Payments
+  /api/sales-transactions/{transaction_id}/shippings:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all shippings for a specific sales transaction
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: transaction_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of shippings with total
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all shippings for a transaction
+      tags:
+      - Shippings
+    post:
+      consumes:
+      - application/json
+      description: Add a shipping entry to a sales transaction. Automatically updates
+        transaction total.
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: transaction_id
+        required: true
+        type: string
+      - description: Shipping details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateShippingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created shipping with updated transaction total
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body or validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction or expedition not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new shipping for a transaction
+      tags:
+      - Shippings
+  /api/sales-transactions/{transaction_id}/shippings/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a shipping entry from a sales transaction. Subtracts shipping
+        cost from transaction total.
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: transaction_id
+        required: true
+        type: string
+      - description: Shipping ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Shipping deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Shipping not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a shipping
+      tags:
+      - Shippings
+    put:
+      consumes:
+      - application/json
+      description: Update a shipping entry. Recalculates transaction total if amount
+        changes.
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: transaction_id
+        required: true
+        type: string
+      - description: Shipping ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated shipping details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateShippingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated shipping with transaction total
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Shipping or expedition not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a shipping
+      tags:
+      - Shippings
   /api/upload/{resource}/{field}/{id}:
     delete:
       consumes:

@@ -15,13 +15,10 @@ import (
 
 // CreateTransactionRequest represents the request body for creating a transaction
 type CreateTransactionRequest struct {
-	SalesAssociateID string                        `json:"sales_associate_id"`
-	ExpeditionID     *string                       `json:"expedition_id"`
-	NoResi           *string                       `json:"no_resi"`
-	PaymentType      string                        `json:"payment_type"` // 'T' or 'K'
-	TransactionDate  time.Time                     `json:"transaction_date"`
-	DueDate          *time.Time                    `json:"due_date"`
-	ExpeditionPrice  float64                       `json:"expedition_price"`
+	SalesAssociateID string                         `json:"sales_associate_id"`
+	PaymentType      string                         `json:"payment_type"` // 'T' or 'K'
+	TransactionDate  time.Time                      `json:"transaction_date"`
+	DueDate          *time.Time                     `json:"due_date"`
 	Items            []CreateTransactionItemRequest `json:"items"`
 }
 
@@ -157,10 +154,11 @@ func GetAllSalesTransactions(c *fiber.Ctx) error {
 		Preload("Biller").
 		Preload("SalesAssociate").
 		Preload("SalesAssociate.City").
-		Preload("Expedition").
 		Preload("Items").
 		Preload("Items.Book").
-		Preload("Installments").
+		Preload("Payments").
+		Preload("Shippings").
+		Preload("Shippings.Expedition").
 		Find(&transactions).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch sales transactions",
@@ -198,11 +196,12 @@ func GetSalesTransaction(c *fiber.Ctx) error {
 		Preload("Biller").
 		Preload("SalesAssociate").
 		Preload("SalesAssociate.City").
-		Preload("Expedition").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.Publisher").
-		Preload("Installments").
+		Preload("Payments").
+		Preload("Shippings").
+		Preload("Shippings.Expedition").
 		Where("id = ?", id).First(&transaction).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Transaction not found",
@@ -278,12 +277,13 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		}
 	}()
 
-	// Calculate total amount from items
+	// Calculate total amount from items and validate stock
 	var totalItemsPrice float64
 	var transactionItems []models.SalesTransactionItem
+	var booksToUpdate []models.Book
 
 	for _, item := range req.Items {
-		// Fetch book to get current price
+		// Fetch book to get current price and stock
 		var book models.Book
 		if err := tx.Where("id = ?", item.BookID).First(&book).Error; err != nil {
 			tx.Rollback()
@@ -300,9 +300,23 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 			})
 		}
 
+		// Validate stock availability
+		if book.Stock < item.Quantity {
+			tx.Rollback()
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error":           fmt.Sprintf("Insufficient stock for book: %s", book.Name),
+				"available_stock": book.Stock,
+				"requested":       item.Quantity,
+			})
+		}
+
 		// Calculate subtotal
 		subtotal := book.Price * float64(item.Quantity)
 		totalItemsPrice += subtotal
+
+		// Reduce stock
+		book.Stock -= item.Quantity
+		booksToUpdate = append(booksToUpdate, book)
 
 		// Create transaction item (we'll save this after creating the transaction)
 		transactionItems = append(transactionItems, models.SalesTransactionItem{
@@ -313,8 +327,18 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		})
 	}
 
-	// Calculate total amount (items + expedition)
-	totalAmount := totalItemsPrice + req.ExpeditionPrice
+	// Update book stocks
+	for _, book := range booksToUpdate {
+		if err := tx.Model(&book).Update("stock", book.Stock).Error; err != nil {
+			tx.Rollback()
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to update book stock",
+			})
+		}
+	}
+
+	// Calculate total amount (items only, shipping added separately)
+	totalAmount := totalItemsPrice
 
 	// Generate invoice number
 	noInvoice, err := generateInvoiceNumber(tx)
@@ -333,16 +357,8 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		PaymentType:      req.PaymentType,
 		TransactionDate:  req.TransactionDate,
 		DueDate:          req.DueDate,
-		ExpeditionPrice:  req.ExpeditionPrice,
-		NoResi:           req.NoResi,
 		TotalAmount:      totalAmount,
 		Status:           0, // Default to booking
-	}
-
-	// Set expedition if provided
-	if req.ExpeditionID != nil && *req.ExpeditionID != "" {
-		expeditionUUID := helpers.ParseUUID(*req.ExpeditionID)
-		transaction.ExpeditionID = &expeditionUUID
 	}
 
 	// Save the transaction
@@ -376,10 +392,11 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 	config.DB.
 		Preload("Biller").
 		Preload("SalesAssociate").
-		Preload("Expedition").
 		Preload("Items").
 		Preload("Items.Book").
-		Preload("Installments").
+		Preload("Payments").
+		Preload("Shippings").
+		Preload("Shippings.Expedition").
 		Where("id = ?", transaction.ID).First(&createdTransaction)
 
 	return c.Status(fiber.StatusCreated).JSON(createdTransaction)
@@ -388,13 +405,9 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 // UpdateTransactionRequest represents the request body for updating a transaction
 type UpdateTransactionRequest struct {
 	SalesAssociateID *string                        `json:"sales_associate_id"`
-	ExpeditionID     *string                        `json:"expedition_id"`
-	NoResi           *string                        `json:"no_resi"`
 	PaymentType      *string                        `json:"payment_type"`
 	TransactionDate  *time.Time                     `json:"transaction_date"`
 	DueDate          *time.Time                     `json:"due_date"`
-	ExpeditionPrice  *float64                       `json:"expedition_price"`
-	TotalAmount      *float64                       `json:"total_amount"`
 	Status           *int                           `json:"status"`
 	Items            []CreateTransactionItemRequest `json:"items,omitempty"`
 }
@@ -459,19 +472,10 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 		updates["sales_associate_id"] = helpers.ParseUUID(*req.SalesAssociateID)
 	}
 
-	// Handle expedition_id - can be set to nil
-	if req.ExpeditionID != nil {
-		if *req.ExpeditionID == "" {
-			updates["expedition_id"] = nil
-		} else {
-			expeditionUUID := helpers.ParseUUID(*req.ExpeditionID)
-			updates["expedition_id"] = expeditionUUID
-		}
-	}
-
 	if req.PaymentType != nil {
 		// Validate payment type
 		if *req.PaymentType != "T" && *req.PaymentType != "K" {
+			tx.Rollback()
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "payment_type must be either 'T' (cash) or 'K' (credit)",
 			})
@@ -488,20 +492,11 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 		updates["due_date"] = *req.DueDate
 	}
 
-	// Handle expedition_price - can be set to 0
-	if req.ExpeditionPrice != nil {
-		updates["expedition_price"] = *req.ExpeditionPrice
-	}
-
-	if req.NoResi != nil {
-		updates["no_resi"] = *req.NoResi
-	}
-
 	if req.Status != nil {
 		updates["status"] = *req.Status
 	}
 
-	// Handle items updates
+	// Handle items updates with stock management
 	if req.Items != nil && len(req.Items) > 0 {
 		// Get existing items for this transaction
 		var existingItems []models.SalesTransactionItem
@@ -533,7 +528,7 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 			}
 			requestedBookIDs[itemReq.BookID] = true
 
-			// Fetch book to get current price
+			// Fetch book to get current price and stock
 			var book models.Book
 			if err := tx.Where("id = ?", itemReq.BookID).First(&book).Error; err != nil {
 				tx.Rollback()
@@ -556,6 +551,36 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 
 			// Check if this book_id already exists in the transaction
 			if existingItem, exists := existingItemsMap[itemReq.BookID]; exists {
+				// Calculate stock adjustment (difference between old and new quantity)
+				quantityDiff := itemReq.Quantity - existingItem.Quantity
+
+				if quantityDiff > 0 {
+					// Need more stock - check availability
+					if book.Stock < quantityDiff {
+						tx.Rollback()
+						return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+							"error":           fmt.Sprintf("Insufficient stock for book: %s", book.Name),
+							"available_stock": book.Stock,
+							"additional_requested": quantityDiff,
+						})
+					}
+					// Reduce stock
+					if err := tx.Model(&book).Update("stock", book.Stock-quantityDiff).Error; err != nil {
+						tx.Rollback()
+						return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+							"error": "Failed to update book stock",
+						})
+					}
+				} else if quantityDiff < 0 {
+					// Returning stock
+					if err := tx.Model(&book).Update("stock", book.Stock-quantityDiff).Error; err != nil {
+						tx.Rollback()
+						return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+							"error": "Failed to update book stock",
+						})
+					}
+				}
+
 				// Update existing item
 				if err := tx.Model(&existingItem).Updates(map[string]interface{}{
 					"quantity": itemReq.Quantity,
@@ -568,6 +593,24 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 					})
 				}
 			} else {
+				// New item - check stock availability
+				if book.Stock < itemReq.Quantity {
+					tx.Rollback()
+					return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+						"error":           fmt.Sprintf("Insufficient stock for book: %s", book.Name),
+						"available_stock": book.Stock,
+						"requested":       itemReq.Quantity,
+					})
+				}
+
+				// Reduce stock
+				if err := tx.Model(&book).Update("stock", book.Stock-itemReq.Quantity).Error; err != nil {
+					tx.Rollback()
+					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+						"error": "Failed to update book stock",
+					})
+				}
+
 				// Create new item
 				newItem := models.SalesTransactionItem{
 					TransactionID: transaction.ID,
@@ -585,9 +628,20 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 			}
 		}
 
-		// Delete items that are no longer in the request
+		// Delete items that are no longer in the request and restore stock
 		for bookID, existingItem := range existingItemsMap {
 			if !requestedBookIDs[bookID] {
+				// Restore stock for removed item
+				var book models.Book
+				if err := tx.Where("id = ?", existingItem.BookID).First(&book).Error; err == nil {
+					if err := tx.Model(&book).Update("stock", book.Stock+existingItem.Quantity).Error; err != nil {
+						tx.Rollback()
+						return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+							"error": "Failed to restore book stock",
+						})
+					}
+				}
+
 				if err := tx.Delete(&existingItem).Error; err != nil {
 					tx.Rollback()
 					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -597,22 +651,14 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 			}
 		}
 
-		// Recalculate total amount
-		expeditionPrice := transaction.ExpeditionPrice
-		if req.ExpeditionPrice != nil {
-			expeditionPrice = *req.ExpeditionPrice
-		}
-		updates["total_amount"] = totalItemsPrice + expeditionPrice
-	} else if req.ExpeditionPrice != nil {
-		// If only expedition price changed (no items update), recalculate total
-		// Fetch current items total
-		var currentItemsTotal float64
-		tx.Model(&models.SalesTransactionItem{}).
-			Where("transaction_id = ?", transaction.ID).
-			Select("COALESCE(SUM(subtotal), 0)").
-			Scan(&currentItemsTotal)
+		// Recalculate total amount (items + existing shipping costs)
+		var totalShippingCost float64
+		tx.Model(&models.Shipping{}).
+			Where("sales_transaction_id = ?", transaction.ID).
+			Select("COALESCE(SUM(total_amount), 0)").
+			Scan(&totalShippingCost)
 
-		updates["total_amount"] = currentItemsTotal + *req.ExpeditionPrice
+		updates["total_amount"] = totalItemsPrice + totalShippingCost
 	}
 
 	// Update using map to handle zero values
@@ -636,10 +682,11 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 	config.DB.
 		Preload("Biller").
 		Preload("SalesAssociate").
-		Preload("Expedition").
 		Preload("Items").
 		Preload("Items.Book").
-		Preload("Installments").
+		Preload("Payments").
+		Preload("Shippings").
+		Preload("Shippings.Expedition").
 		Where("id = ?", id).First(&transaction)
 
 	return c.JSON(transaction)
@@ -647,7 +694,7 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 
 // DeleteSalesTransaction godoc
 // @Summary Delete a sales transaction
-// @Description Delete a sales transaction by ID (this will cascade delete items and installments)
+// @Description Delete a sales transaction by ID (this will cascade delete items, payments, and shippings). Stock is restored for all items.
 // @Tags Sales Transactions
 // @Accept json
 // @Produce json
@@ -661,16 +708,47 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 func DeleteSalesTransaction(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	result := config.DB.Delete(&models.SalesTransaction{}, "id = ?", id)
-	if result.Error != nil {
+	// Verify transaction exists and get items for stock restoration
+	var transaction models.SalesTransaction
+	if err := config.DB.Preload("Items").Where("id = ?", id).First(&transaction).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Transaction not found",
+		})
+	}
+
+	// Start database transaction
+	tx := config.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Restore stock for all items
+	for _, item := range transaction.Items {
+		var book models.Book
+		if err := tx.Where("id = ?", item.BookID).First(&book).Error; err == nil {
+			if err := tx.Model(&book).Update("stock", book.Stock+item.Quantity).Error; err != nil {
+				tx.Rollback()
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "Failed to restore book stock",
+				})
+			}
+		}
+	}
+
+	// Delete the transaction (cascade will delete items, payments, shippings)
+	if err := tx.Delete(&transaction).Error; err != nil {
+		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to delete transaction",
 		})
 	}
 
-	if result.RowsAffected == 0 {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Transaction not found",
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to commit transaction",
 		})
 	}
 
