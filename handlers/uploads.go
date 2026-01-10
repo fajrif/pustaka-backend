@@ -42,12 +42,13 @@ func UploadResourceField(c *fiber.Ctx) error {
 		"publishers":       {"logo", "file"},
 		"expeditions":      {"logo", "file"},
 		"sales-associates": {"photo", "file"},
+		"billers":          {"logo"},
 	}
 
 	validFields, resourceExists := validCombinations[resource]
 	if !resourceExists {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid resource. Valid resources: users, books, publishers, expeditions, sales-associates",
+			"error": "Invalid resource. Valid resources: users, books, publishers, expeditions, sales-associates, billers",
 		})
 	}
 
@@ -205,6 +206,13 @@ func updateResourceFileURL(resource, field, id, fileURL string) error {
 		}
 		err = config.DB.Model(&salesAssociate).Update(columnName, fileURL).Error
 
+	case "billers":
+		var biller models.Biller
+		if err := config.DB.Where("id = ?", id).First(&biller).Error; err != nil {
+			return fmt.Errorf("resource not found")
+		}
+		err = config.DB.Model(&biller).Update(columnName, fileURL).Error
+
 	default:
 		return fmt.Errorf("invalid resource")
 	}
@@ -239,12 +247,13 @@ func DeleteResourceField(c *fiber.Ctx) error {
 		"publishers":       {"logo", "file"},
 		"expeditions":      {"logo", "file"},
 		"sales-associates": {"photo", "file"},
+		"billers":          {"logo"},
 	}
 
 	validFields, resourceExists := validCombinations[resource]
 	if !resourceExists {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid resource. Valid resources: users, books, publishers, expeditions, sales-associates",
+			"error": "Invalid resource. Valid resources: users, books, publishers, expeditions, sales-associates, billers",
 		})
 	}
 
@@ -366,6 +375,13 @@ func getResourceFileURL(resource, field, id string) (*string, error) {
 			return salesAssociate.PhotoUrl, nil
 		}
 		return salesAssociate.FileUrl, nil
+
+	case "billers":
+		var biller models.Biller
+		if err := config.DB.Where("id = ?", id).First(&biller).Error; err != nil {
+			return nil, fmt.Errorf("resource not found")
+		}
+		return biller.LogoUrl, nil
 
 	default:
 		return nil, fmt.Errorf("invalid resource")
