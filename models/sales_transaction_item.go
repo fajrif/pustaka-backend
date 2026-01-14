@@ -12,6 +12,8 @@ type SalesTransactionItem struct {
 	Book          *Book     `gorm:"foreignKey:BookID" json:"book,omitempty"`
 	Quantity      int       `gorm:"not null" json:"quantity"`
 	Price         float64   `gorm:"not null" json:"price"`
+	Promotion     float64   `gorm:"not null;default:0" json:"promotion"`
+	Discount      float64   `gorm:"not null;default:0" json:"discount"`
 	Subtotal      float64   `gorm:"not null" json:"subtotal"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`

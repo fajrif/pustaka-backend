@@ -21,7 +21,7 @@ fi
 
 # Configuration
 SEED_BINARY="./bin/seed"
-GO_FILE="seed.go"
+GO_FILE="./cmd/seed/main.go"
 
 # Check if seed binary exists, build if not
 check_seed_binary() {
@@ -88,6 +88,7 @@ list_seeders() {
   echo -e "${CYAN}  Available Seeders${NC}"
   echo -e "${CYAN}==========================================${NC}"
   echo ""
+  echo -e "${GREEN}▶ curriculum${NC}       - Seed curriculum table with curriculum types"
   echo -e "${GREEN}▶ jenis_buku${NC}       - Seed jenis_buku table with book types"
   echo -e "${GREEN}▶ bidang_studi${NC}     - Seed bidang_studi table with field types"
   echo -e "${GREEN}▶ jenjang_studi${NC}    - Seed jenjang_studi table with degree types"
@@ -100,7 +101,7 @@ list_seeders() {
   echo -e "${YELLOW}To add more seeders:${NC}"
   echo "  1. Create a new file in seeds/ directory"
   echo "  2. Implement the seeder function"
-  echo "  3. Register it in seed.go"
+  echo "  3. Register it in cmd/seed/main.go"
   echo ""
 }
 

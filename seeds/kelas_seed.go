@@ -3,86 +3,82 @@ package seeds
 import (
 	"fmt"
 	"pustaka-backend/models"
+
 	"gorm.io/gorm"
 )
 
 // KelasSeeder seeds the kelas table with initial data
 // Uses FirstOrCreate for conflict resolution - won't create duplicates
 func KelasSeeder(db *gorm.DB) error {
-	fmt.Println("📝 Seeding kelas table...")
-
-	// Helper function to create string pointer
-	// strPtr := func(s string) *string {
-	// 	return &s
-	// }
+	fmt.Println("Seeding kelas table...")
 
 	kelasData := []models.Kelas{
 		{
-				Code: "ALL",
-				Name: "SEMUA TINGKAT",
+			Code: "1",
+			Name: "Kelas 1",
 		},
 		{
-				Code: "A",
-				Name: "USIA 4-5 TAHUN",
+			Code: "2",
+			Name: "Kelas 2",
 		},
 		{
-				Code: "B",
-				Name: "USIA 5-6 TAHUN",
+			Code: "3",
+			Name: "Kelas 3",
 		},
 		{
-				Code: "K1",
-				Name: "KELAS I",
+			Code: "4",
+			Name: "Kelas 4",
 		},
 		{
-				Code: "K2",
-				Name: "KELAS II",
+			Code: "5",
+			Name: "Kelas 5",
 		},
 		{
-				Code: "K3",
-				Name: "KELAS III",
+			Code: "6",
+			Name: "Kelas 6",
 		},
 		{
-				Code: "K4",
-				Name: "KELAS IV",
+			Code: "7",
+			Name: "Kelas 7",
 		},
 		{
-				Code: "K5",
-				Name: "KELAS V",
+			Code: "8",
+			Name: "Kelas 8",
 		},
 		{
-				Code: "K6",
-				Name: "KELAS VI",
+			Code: "9",
+			Name: "Kelas 9",
 		},
 		{
-				Code: "K7",
-				Name: "KELAS VII",
+			Code: "10",
+			Name: "Kelas 10",
 		},
 		{
-				Code: "K8",
-				Name: "KELAS VIII",
+			Code: "11",
+			Name: "Kelas 11",
 		},
 		{
-				Code: "K9",
-				Name: "KELAS IX",
+			Code: "12",
+			Name: "Kelas 12",
 		},
 		{
-				Code: "K10",
-				Name: "KELAS X",
+			Code: "A",
+			Name: "TK A (Usia 4-5)",
 		},
 		{
-				Code: "K11",
-				Name: "KELAS XI",
+			Code: "B",
+			Name: "TK B (Usia 5-6)",
 		},
 		{
-				Code: "K12",
-				Name: "KELAS XII",
+			Code: "ALL",
+			Name: "Semua Tingkat",
 		},
 	}
 
 	created := 0
 	skipped := 0
 
-	// delete all existing records before seeding
+	// Delete all existing records before seeding
 	db.Exec("DELETE FROM kelas")
 
 	// Insert all records using FirstOrCreate
@@ -101,6 +97,6 @@ func KelasSeeder(db *gorm.DB) error {
 		}
 	}
 
-	fmt.Printf("✓ Kelas seeding completed: %d created, %d skipped (already exist)\n", created, skipped)
+	fmt.Printf("Kelas seeding completed: %d created, %d skipped (already exist)\n", created, skipped)
 	return nil
 }

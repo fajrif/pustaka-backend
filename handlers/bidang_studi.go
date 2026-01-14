@@ -27,7 +27,7 @@ func GetAllBidangStudi(c *fiber.Ctx) error {
 	// Get pagination parameters
 	pagination := helpers.GetPaginationParams(c)
 
-	query := config.DB.Order("created_at DESC")
+	query := config.DB.Order("name ASC")
 	queryCount := config.DB.Model(&models.BidangStudi{})
 
 	// add params for not using pagination

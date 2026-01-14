@@ -18,6 +18,18 @@ import (
 // @Param search query string false "Search by name or description"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of items per page (default: 20)"
+// @Param code query string false "Filter by book code"
+// @Param bidang_studi_id query string false "Filter by bidang studi ID"
+// @Param jenis_buku_id query string false "Filter by jenis buku ID"
+// @Param jenjang_studi_id query string false "Filter by jenjang studi ID"
+// @Param curriculum_id query string false "Filter by curriculum ID"
+// @Param publisher_id query string false "Filter by publisher ID"
+// @Param merk_buku_id query string false "Filter by merk buku ID"
+// @Param periode query int false "Filter by periode"
+// @Param year query string false "Filter by year"
+// @Param kelas query string false "Filter by kelas code (e.g., 1, 2, A, B, ALL)"
+// @Param price_min query number false "Minimum price filter"
+// @Param price_max query number false "Maximum price filter"
 // @Success 200 {object} map[string]interface{} "List of all books with pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -40,12 +52,24 @@ func GetAllBooks(c *fiber.Ctx) error {
 		pagination.Offset = 0 // No offset
 	}
 
-	// Filter search
+	// Filter search (name or description)
 	if searchQuery := c.Query("search"); searchQuery != "" {
-		// Wrap string search with wildcard SQL LIKE
 		searchTerm := "%" + searchQuery + "%"
-		conds = append(conds, "books.name ILIKE ? OR books.description ILIKE ?")
+		conds = append(conds, "(books.name ILIKE ? OR books.description ILIKE ?)")
 		args = append(args, searchTerm, searchTerm)
+	}
+
+	// Filter by code (if books have a code field - using name for now as fallback)
+	if code := c.Query("code"); code != "" {
+		searchTerm := "%" + code + "%"
+		conds = append(conds, "books.name ILIKE ?")
+		args = append(args, searchTerm)
+	}
+
+	// Filter bidang_studi_id
+	if bidangStudiId := c.Query("bidang_studi_id"); bidangStudiId != "" {
+		conds = append(conds, "books.bidang_studi_id = ?")
+		args = append(args, bidangStudiId)
 	}
 
 	// Filter jenis_buku_id
@@ -54,10 +78,57 @@ func GetAllBooks(c *fiber.Ctx) error {
 		args = append(args, jenisBukuId)
 	}
 
+	// Filter jenjang_studi_id
+	if jenjangStudiId := c.Query("jenjang_studi_id"); jenjangStudiId != "" {
+		conds = append(conds, "books.jenjang_studi_id = ?")
+		args = append(args, jenjangStudiId)
+	}
+
+	// Filter curriculum_id
+	if curriculumId := c.Query("curriculum_id"); curriculumId != "" {
+		conds = append(conds, "books.curriculum_id = ?")
+		args = append(args, curriculumId)
+	}
+
 	// Filter publisher_id
 	if publisherId := c.Query("publisher_id"); publisherId != "" {
 		conds = append(conds, "books.publisher_id = ?")
 		args = append(args, publisherId)
+	}
+
+	// Filter merk_buku_id
+	if merkBukuId := c.Query("merk_buku_id"); merkBukuId != "" {
+		conds = append(conds, "books.merk_buku_id = ?")
+		args = append(args, merkBukuId)
+	}
+
+	// Filter periode
+	if periode := c.Query("periode"); periode != "" {
+		conds = append(conds, "books.periode = ?")
+		args = append(args, periode)
+	}
+
+	// Filter year
+	if year := c.Query("year"); year != "" {
+		conds = append(conds, "books.year = ?")
+		args = append(args, year)
+	}
+
+	// Filter kelas (CHAR(5) code)
+	if kelas := c.Query("kelas"); kelas != "" {
+		conds = append(conds, "books.kelas = ?")
+		args = append(args, kelas)
+	}
+
+	// Filter price range
+	if priceMin := c.Query("price_min"); priceMin != "" {
+		conds = append(conds, "books.price >= ?")
+		args = append(args, priceMin)
+	}
+
+	if priceMax := c.Query("price_max"); priceMax != "" {
+		conds = append(conds, "books.price <= ?")
+		args = append(args, priceMax)
 	}
 
 	// Apply all conditions
@@ -74,7 +145,7 @@ func GetAllBooks(c *fiber.Ctx) error {
 		Preload("JenisBuku").
 		Preload("JenjangStudi").
 		Preload("BidangStudi").
-		Preload("Kelas").
+		Preload("Curriculum").
 		Preload("Publisher").
 		Preload("Publisher.City").
 		Find(&books).Error; err != nil {
@@ -115,7 +186,7 @@ func GetBook(c *fiber.Ctx) error {
 		Preload("JenisBuku").
 		Preload("JenjangStudi").
 		Preload("BidangStudi").
-		Preload("Kelas").
+		Preload("Curriculum").
 		Preload("Publisher").
 		Preload("Publisher.City").
 		Where("id = ?", id).First(&book).Error; err != nil {
@@ -131,7 +202,7 @@ func GetBook(c *fiber.Ctx) error {
 
 // CreateBook godoc
 // @Summary Create a new book
-// @Description Create a new book entry
+// @Description Create a new book entry. If name is empty and bidang_studi_id is provided, name will be auto-populated from bidang_studi.name
 // @Tags Books
 // @Accept json
 // @Produce json
@@ -150,11 +221,36 @@ func CreateBook(c *fiber.Ctx) error {
 		})
 	}
 
+	// Auto-populate name from BidangStudi if name is empty and BidangStudiID is provided
+	if book.Name == "" && book.BidangStudiID != nil {
+		var bidangStudi models.BidangStudi
+		if err := config.DB.Where("id = ?", book.BidangStudiID).First(&bidangStudi).Error; err == nil {
+			book.Name = bidangStudi.Name
+		}
+	}
+
+	// Validate that name is not empty
+	if book.Name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Book name is required (provide name or bidang_studi_id)",
+		})
+	}
+
 	if err := config.DB.Create(&book).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create book",
 		})
 	}
+
+	// Fetch created book with relations
+	config.DB.
+		Preload("MerkBuku").
+		Preload("JenisBuku").
+		Preload("JenjangStudi").
+		Preload("BidangStudi").
+		Preload("Curriculum").
+		Preload("Publisher").
+		Where("id = ?", book.ID).First(&book)
 
 	return c.Status(fiber.StatusCreated).JSON(book)
 }
