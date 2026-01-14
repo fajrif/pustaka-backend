@@ -14,6 +14,8 @@ type Book struct {
 	ISBN           *string       `json:"isbn"`
 	Periode        int           `gorm:"default:1" json:"periode"`
 	Stock          int           `gorm:"default:0" json:"stock"`
+	NoPages        int           `gorm:"default:1" json:"no_pages"`
+	Kelas          *string       `gorm:"type:varchar(5)" json:"kelas"`
 	MerkBukuID     *uuid.UUID    `gorm:"type:uuid" json:"merk_buku_id"`
 	MerkBuku       *MerkBuku     `gorm:"foreignKey:MerkBukuID" json:"merk_buku,omitempty"`
 	JenisBukuID    *uuid.UUID    `gorm:"type:uuid" json:"jenis_buku_id"`
@@ -22,8 +24,8 @@ type Book struct {
 	JenjangStudi   *JenjangStudi `gorm:"foreignKey:JenjangStudiID" json:"jenjang_studi,omitempty"`
 	BidangStudiID  *uuid.UUID    `gorm:"type:uuid" json:"bidang_studi_id"`
 	BidangStudi    *BidangStudi  `gorm:"foreignKey:BidangStudiID" json:"bidang_studi,omitempty"`
-	KelasID        *uuid.UUID    `gorm:"type:uuid" json:"kelas_id"`
-	Kelas          *Kelas        `gorm:"foreignKey:KelasID" json:"kelas,omitempty"`
+	CurriculumID   *uuid.UUID    `gorm:"type:uuid" json:"curriculum_id"`
+	Curriculum     *Curriculum   `gorm:"foreignKey:CurriculumID" json:"curriculum,omitempty"`
 	PublisherID    *uuid.UUID    `gorm:"type:uuid" json:"publisher_id"`
 	Publisher      *Publisher    `gorm:"foreignKey:PublisherID" json:"publisher,omitempty"`
 	Price          float64       `gorm:"not null" json:"price"`

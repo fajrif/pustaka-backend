@@ -205,7 +205,7 @@ build-migrate:
 build-seed:
 	@echo "🔨 Building seed tool..."
 	mkdir -p bin
-	go build -o bin/seed seed.go
+	go build -o bin/seed ./cmd/seed/main.go
 	@echo "✓ Seed tool built: bin/seed"
 
 # ============================================================================

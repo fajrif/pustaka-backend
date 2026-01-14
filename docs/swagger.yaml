@@ -18,6 +18,28 @@ definitions:
       payment_date:
         type: string
     type: object
+  handlers.CreatePurchaseTransactionItemReq:
+    properties:
+      book_id:
+        type: string
+      price:
+        type: number
+      quantity:
+        type: integer
+    type: object
+  handlers.CreatePurchaseTransactionRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.CreatePurchaseTransactionItemReq'
+        type: array
+      note:
+        type: string
+      purchase_date:
+        type: string
+      supplier_id:
+        type: string
+    type: object
   handlers.CreateShippingRequest:
     properties:
       expedition_id:
@@ -31,6 +53,12 @@ definitions:
     properties:
       book_id:
         type: string
+      discount:
+        description: Percentage discount (0-100) applied after promotion
+        type: number
+      promotion:
+        description: Flat amount deduction from price
+        type: number
       quantity:
         type: integer
     type: object
@@ -66,6 +94,19 @@ definitions:
         type: string
       password:
         example: newpassword123
+        type: string
+    type: object
+  handlers.UpdatePurchaseTransactionRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.CreatePurchaseTransactionItemReq'
+        type: array
+      note:
+        type: string
+      purchase_date:
+        type: string
+      supplier_id:
         type: string
     type: object
   handlers.UpdateShippingRequest:
@@ -154,6 +195,10 @@ definitions:
         type: string
       created_at:
         type: string
+      curriculum:
+        $ref: '#/definitions/models.Curriculum'
+      curriculum_id:
+        type: string
       description:
         type: string
       file_url:
@@ -173,8 +218,6 @@ definitions:
       jenjang_studi_id:
         type: string
       kelas:
-        $ref: '#/definitions/models.Kelas'
-      kelas_id:
         type: string
       merk_buku:
         $ref: '#/definitions/models.MerkBuku'
@@ -182,6 +225,8 @@ definitions:
         type: string
       name:
         type: string
+      no_pages:
+        type: integer
       periode:
         type: integer
       price:
@@ -202,6 +247,21 @@ definitions:
       code:
         type: string
       created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Curriculum:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      description:
         type: string
       id:
         type: string
@@ -366,6 +426,57 @@ definitions:
       website:
         type: string
     type: object
+  models.PurchaseTransaction:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/models.PurchaseTransactionItem'
+        type: array
+      no_invoice:
+        type: string
+      note:
+        type: string
+      purchase_date:
+        type: string
+      receipt_image_url:
+        type: string
+      status:
+        description: 0 = pending, 1 = completed, 2 = cancelled
+        type: integer
+      supplier:
+        $ref: '#/definitions/models.Publisher'
+      supplier_id:
+        type: string
+      total_amount:
+        type: number
+      updated_at:
+        type: string
+    type: object
+  models.PurchaseTransactionItem:
+    properties:
+      book:
+        $ref: '#/definitions/models.Book'
+      book_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      price:
+        type: number
+      purchase_transaction_id:
+        type: string
+      quantity:
+        type: integer
+      subtotal:
+        type: number
+      updated_at:
+        type: string
+    type: object
   models.SalesAssociate:
     properties:
       address:
@@ -483,9 +594,13 @@ definitions:
         type: string
       created_at:
         type: string
+      discount:
+        type: number
       id:
         type: string
       price:
+        type: number
+      promotion:
         type: number
       quantity:
         type: integer
@@ -1015,6 +1130,54 @@ paths:
         in: query
         name: limit
         type: integer
+      - description: Filter by book code
+        in: query
+        name: code
+        type: string
+      - description: Filter by bidang studi ID
+        in: query
+        name: bidang_studi_id
+        type: string
+      - description: Filter by jenis buku ID
+        in: query
+        name: jenis_buku_id
+        type: string
+      - description: Filter by jenjang studi ID
+        in: query
+        name: jenjang_studi_id
+        type: string
+      - description: Filter by curriculum ID
+        in: query
+        name: curriculum_id
+        type: string
+      - description: Filter by publisher ID
+        in: query
+        name: publisher_id
+        type: string
+      - description: Filter by merk buku ID
+        in: query
+        name: merk_buku_id
+        type: string
+      - description: Filter by periode
+        in: query
+        name: periode
+        type: integer
+      - description: Filter by year
+        in: query
+        name: year
+        type: string
+      - description: Filter by kelas code (e.g., 1, 2, A, B, ALL)
+        in: query
+        name: kelas
+        type: string
+      - description: Minimum price filter
+        in: query
+        name: price_min
+        type: number
+      - description: Maximum price filter
+        in: query
+        name: price_max
+        type: number
       produces:
       - application/json
       responses:
@@ -1041,7 +1204,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new book entry
+      description: Create a new book entry. If name is empty and bidang_studi_id is
+        provided, name will be auto-populated from bidang_studi.name
       parameters:
       - description: Book details
         in: body
@@ -1395,6 +1559,209 @@ paths:
       summary: Update a city
       tags:
       - Cities
+  /api/curriculum:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all curriculum records ordered by creation date
+      parameters:
+      - description: Search by code, name, or description
+        in: query
+        name: search
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      - description: Get all records without pagination
+        in: query
+        name: all
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all curriculum with pagination
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all curriculum
+      tags:
+      - Curriculum
+    post:
+      consumes:
+      - application/json
+      description: Create a new curriculum entry
+      parameters:
+      - description: Curriculum details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Curriculum'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created curriculum
+          schema:
+            $ref: '#/definitions/models.Curriculum'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new curriculum
+      tags:
+      - Curriculum
+  /api/curriculum/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a curriculum by ID
+      parameters:
+      - description: Curriculum ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Curriculum deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Curriculum not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a curriculum
+      tags:
+      - Curriculum
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single curriculum by its ID
+      parameters:
+      - description: Curriculum ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Curriculum details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Curriculum not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a curriculum by ID
+      tags:
+      - Curriculum
+    put:
+      consumes:
+      - application/json
+      description: Update an existing curriculum by ID
+      parameters:
+      - description: Curriculum ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated curriculum details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Curriculum'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated curriculum
+          schema:
+            $ref: '#/definitions/models.Curriculum'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Curriculum not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a curriculum
+      tags:
+      - Curriculum
   /api/expeditions:
     get:
       consumes:
@@ -2662,6 +3029,561 @@ paths:
       summary: Update a publisher
       tags:
       - Publishers
+  /api/purchase-transactions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all purchase transactions with their related entities
+      parameters:
+      - description: Search by invoice number or supplier name
+        in: query
+        name: search
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by status (0=pending, 1=completed, 2=cancelled)
+        in: query
+        name: status
+        type: integer
+      - description: Filter by supplier ID
+        in: query
+        name: supplier_id
+        type: string
+      - description: Filter by start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: Filter by end date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all purchase transactions with pagination
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all purchase transactions
+      tags:
+      - Purchase Transactions
+    post:
+      consumes:
+      - application/json
+      description: Create a new purchase transaction with items. Stock is NOT increased
+        until marked as completed.
+      parameters:
+      - description: Transaction details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreatePurchaseTransactionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created transaction
+          schema:
+            $ref: '#/definitions/models.PurchaseTransaction'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new purchase transaction
+      tags:
+      - Purchase Transactions
+  /api/purchase-transactions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a purchase transaction by ID. If status is completed, stock
+        will be restored.
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a purchase transaction
+      tags:
+      - Purchase Transactions
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single purchase transaction by its ID with all related
+        entities
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a purchase transaction by ID
+      tags:
+      - Purchase Transactions
+    put:
+      consumes:
+      - application/json
+      description: Update an existing purchase transaction by ID. Cannot update completed
+        or cancelled transactions.
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated transaction details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdatePurchaseTransactionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated transaction
+          schema:
+            $ref: '#/definitions/models.PurchaseTransaction'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a purchase transaction
+      tags:
+      - Purchase Transactions
+  /api/purchase-transactions/{id}/cancel:
+    post:
+      consumes:
+      - application/json
+      description: Cancel a pending purchase transaction. Stock is not affected since
+        pending transactions don't affect stock.
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction cancelled successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Transaction cannot be cancelled
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Cancel a purchase transaction
+      tags:
+      - Purchase Transactions
+  /api/purchase-transactions/{id}/complete:
+    post:
+      consumes:
+      - application/json
+      description: Mark a pending purchase transaction as completed. This will increase
+        book stock for all items.
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Completed transaction
+          schema:
+            $ref: '#/definitions/models.PurchaseTransaction'
+        "400":
+          description: Transaction cannot be completed
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Mark a purchase transaction as completed
+      tags:
+      - Purchase Transactions
+  /api/purchase-transactions/{id}/receipt:
+    put:
+      consumes:
+      - application/json
+      description: Upload a receipt image for an existing purchase transaction
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Receipt image URL
+        in: body
+        name: receipt_image_url
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Receipt uploaded successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload receipt image for a purchase transaction
+      tags:
+      - Purchase Transactions
+  /api/reports/books-stock:
+    get:
+      consumes:
+      - application/json
+      description: Get a report of all books with their current stock levels
+      parameters:
+      - description: Filter by jenis buku ID
+        in: query
+        name: jenis_buku_id
+        type: string
+      - description: Filter by jenjang studi ID
+        in: query
+        name: jenjang_studi_id
+        type: string
+      - description: Filter by curriculum ID
+        in: query
+        name: curriculum_id
+        type: string
+      - description: Filter by kelas code
+        in: query
+        name: kelas
+        type: string
+      - description: 'Low stock threshold (default: 10)'
+        in: query
+        name: low_stock_threshold
+        type: integer
+      - description: Sort by field (stock, name, created_at)
+        in: query
+        name: sort_by
+        type: string
+      - description: Sort order (asc, desc)
+        in: query
+        name: sort_order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Books stock report with summary
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get books stock report
+      tags:
+      - Reports
+  /api/reports/credits:
+    get:
+      consumes:
+      - application/json
+      description: Get a report of all outstanding credit transactions (remaining
+        balances)
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      - description: Filter by sales associate ID
+        in: query
+        name: sales_associate_id
+        type: string
+      - description: Show only overdue transactions
+        in: query
+        name: overdue_only
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Credits report with summary
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get credits (piutang) report
+      tags:
+      - Reports
+  /api/reports/purchases:
+    get:
+      consumes:
+      - application/json
+      description: Get a report of all purchases from suppliers with filters
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      - description: Filter by supplier ID
+        in: query
+        name: supplier_id
+        type: string
+      - description: Filter by status (0=pending, 1=completed, 2=cancelled)
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Purchasing report with summary
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get purchasing report
+      tags:
+      - Reports
+  /api/reports/sales:
+    get:
+      consumes:
+      - application/json
+      description: Get a report of all sales transactions with filters
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      - description: Filter by payment type (T=cash, K=credit, all=both)
+        in: query
+        name: payment_type
+        type: string
+      - description: Filter by status (0=booking, 1=paid-off, 2=installment)
+        in: query
+        name: status
+        type: integer
+      - description: Filter by sales associate ID
+        in: query
+        name: sales_associate_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sales report with summary
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get sales report
+      tags:
+      - Reports
   /api/sales-associates:
     get:
       consumes:

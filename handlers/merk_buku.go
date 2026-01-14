@@ -27,7 +27,7 @@ func GetAllMerkBuku(c *fiber.Ctx) error {
 	// Get pagination parameters
 	pagination := helpers.GetPaginationParams(c)
 
-	query := config.DB.Order("created_at DESC")
+	query := config.DB.Order("created_at ASC")
 	queryCount := config.DB.Model(&models.MerkBuku{})
 
 	// add params for not using pagination

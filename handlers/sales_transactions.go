@@ -24,8 +24,24 @@ type CreateTransactionRequest struct {
 
 // CreateTransactionItemRequest represents an item in the transaction
 type CreateTransactionItemRequest struct {
-	BookID   string `json:"book_id"`
-	Quantity int    `json:"quantity"`
+	BookID    string  `json:"book_id"`
+	Quantity  int     `json:"quantity"`
+	Promotion float64 `json:"promotion"` // Flat amount deduction from price
+	Discount  float64 `json:"discount"`  // Percentage discount (0-100) applied after promotion
+}
+
+// calculateItemSubtotal calculates the subtotal for an item with promotion and discount
+// Formula: subtotal = (price - promotion) * (1 - discount/100) * quantity
+// Example: price=10000, quantity=3, promotion=50, discount=10%
+//   adjustedPrice = 10000 - 50 = 9950
+//   subtotal = 9950 * (1 - 0.10) * 3 = 9950 * 0.90 * 3 = 26865
+func calculateItemSubtotal(price float64, quantity int, promotion float64, discount float64) float64 {
+	adjustedPrice := price - promotion
+	if adjustedPrice < 0 {
+		adjustedPrice = 0
+	}
+	afterDiscount := adjustedPrice * (1 - discount/100)
+	return afterDiscount * float64(quantity)
 }
 
 // CreateInstallmentRequest represents an installment payment
@@ -156,6 +172,7 @@ func GetAllSalesTransactions(c *fiber.Ctx) error {
 		Preload("SalesAssociate.City").
 		Preload("Items").
 		Preload("Items.Book").
+		Preload("Items.Book.MerkBuku").
 		Preload("Payments").
 		Preload("Shippings").
 		Preload("Shippings.Expedition").
@@ -200,6 +217,7 @@ func GetSalesTransaction(c *fiber.Ctx) error {
 		Preload("Items.Book").
 		Preload("Items.Book.Publisher").
 		Preload("Items.Book.JenisBuku").
+		Preload("Items.Book.MerkBuku").
 		Preload("Payments").
 		Preload("Shippings").
 		Preload("Shippings.Expedition").
@@ -270,6 +288,17 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		})
 	}
 
+	// Validate discount is only allowed for cash payments
+	if req.PaymentType == "K" {
+		for _, item := range req.Items {
+			if item.Discount > 0 {
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+					"error": "Discount is only allowed for cash payments (payment_type = 'T')",
+				})
+			}
+		}
+	}
+
 	// Start a database transaction
 	tx := config.DB.Begin()
 	defer func() {
@@ -311,8 +340,22 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 			})
 		}
 
-		// Calculate subtotal
-		subtotal := book.Price * float64(item.Quantity)
+		// Validate promotion and discount values
+		if item.Promotion < 0 {
+			tx.Rollback()
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Promotion cannot be negative",
+			})
+		}
+		if item.Discount < 0 || item.Discount > 100 {
+			tx.Rollback()
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Discount must be between 0 and 100",
+			})
+		}
+
+		// Calculate subtotal with promotion and discount
+		subtotal := calculateItemSubtotal(book.Price, item.Quantity, item.Promotion, item.Discount)
 		totalItemsPrice += subtotal
 
 		// Reduce stock
@@ -321,10 +364,12 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 
 		// Create transaction item (we'll save this after creating the transaction)
 		transactionItems = append(transactionItems, models.SalesTransactionItem{
-			BookID:   book.ID,
-			Quantity: item.Quantity,
-			Price:    book.Price,
-			Subtotal: subtotal,
+			BookID:    book.ID,
+			Quantity:  item.Quantity,
+			Price:     book.Price,
+			Promotion: item.Promotion,
+			Discount:  item.Discount,
+			Subtotal:  subtotal,
 		})
 	}
 
@@ -395,6 +440,7 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		Preload("SalesAssociate").
 		Preload("Items").
 		Preload("Items.Book").
+		Preload("Items.Book.MerkBuku").
 		Preload("Payments").
 		Preload("Shippings").
 		Preload("Shippings.Expedition").
@@ -482,6 +528,18 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 			})
 		}
 		updates["payment_type"] = *req.PaymentType
+
+		// Validate discount is only allowed for cash payments
+		if *req.PaymentType == "K" && len(req.Items) > 0 {
+			for _, item := range req.Items {
+				if item.Discount > 0 {
+					tx.Rollback()
+					return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+						"error": "Discount is only allowed for cash payments (payment_type = 'T')",
+					})
+				}
+			}
+		}
 	}
 
 	if req.TransactionDate != nil {
@@ -546,8 +604,22 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 				})
 			}
 
-			// Calculate subtotal
-			subtotal := book.Price * float64(itemReq.Quantity)
+			// Validate promotion and discount values
+			if itemReq.Promotion < 0 {
+				tx.Rollback()
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+					"error": "Promotion cannot be negative",
+				})
+			}
+			if itemReq.Discount < 0 || itemReq.Discount > 100 {
+				tx.Rollback()
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+					"error": "Discount must be between 0 and 100",
+				})
+			}
+
+			// Calculate subtotal with promotion and discount
+			subtotal := calculateItemSubtotal(book.Price, itemReq.Quantity, itemReq.Promotion, itemReq.Discount)
 			totalItemsPrice += subtotal
 
 			// Check if this book_id already exists in the transaction
@@ -560,8 +632,8 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 					if book.Stock < quantityDiff {
 						tx.Rollback()
 						return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-							"error":           fmt.Sprintf("Insufficient stock for book: %s", book.Name),
-							"available_stock": book.Stock,
+							"error":                fmt.Sprintf("Insufficient stock for book: %s", book.Name),
+							"available_stock":      book.Stock,
 							"additional_requested": quantityDiff,
 						})
 					}
@@ -584,9 +656,11 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 
 				// Update existing item
 				if err := tx.Model(&existingItem).Updates(map[string]interface{}{
-					"quantity": itemReq.Quantity,
-					"price":    book.Price,
-					"subtotal": subtotal,
+					"quantity":  itemReq.Quantity,
+					"price":     book.Price,
+					"promotion": itemReq.Promotion,
+					"discount":  itemReq.Discount,
+					"subtotal":  subtotal,
 				}).Error; err != nil {
 					tx.Rollback()
 					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -618,6 +692,8 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 					BookID:        book.ID,
 					Quantity:      itemReq.Quantity,
 					Price:         book.Price,
+					Promotion:     itemReq.Promotion,
+					Discount:      itemReq.Discount,
 					Subtotal:      subtotal,
 				}
 				if err := tx.Create(&newItem).Error; err != nil {
@@ -685,6 +761,7 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 		Preload("SalesAssociate").
 		Preload("Items").
 		Preload("Items.Book").
+		Preload("Items.Book.MerkBuku").
 		Preload("Payments").
 		Preload("Shippings").
 		Preload("Shippings.Expedition").

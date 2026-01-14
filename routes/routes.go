@@ -136,6 +136,32 @@ func Setup(app *fiber.App) {
     billers.Put("/:id", handlers.UpdateBiller)
     billers.Delete("/:id", handlers.DeleteBiller)
 
+    // Curriculum routes
+    curriculum := api.Group("/curriculums")
+    curriculum.Get("/", handlers.GetAllCurriculums)
+    curriculum.Get("/:id", handlers.GetCurriculum)
+    curriculum.Post("/", handlers.CreateCurriculum)
+    curriculum.Put("/:id", handlers.UpdateCurriculum)
+    curriculum.Delete("/:id", handlers.DeleteCurriculum)
+
+    // PurchaseTransactions routes
+    purchaseTransactions := api.Group("/purchase-transactions")
+    purchaseTransactions.Get("/", handlers.GetAllPurchaseTransactions)
+    purchaseTransactions.Get("/:id", handlers.GetPurchaseTransaction)
+    purchaseTransactions.Post("/", handlers.CreatePurchaseTransaction)
+    purchaseTransactions.Put("/:id", handlers.UpdatePurchaseTransaction)
+    purchaseTransactions.Delete("/:id", handlers.DeletePurchaseTransaction)
+    purchaseTransactions.Post("/:id/complete", handlers.CompletePurchaseTransaction)
+    purchaseTransactions.Post("/:id/cancel", handlers.CancelPurchaseTransaction)
+    purchaseTransactions.Put("/:id/receipt", handlers.UploadPurchaseReceipt)
+
+    // Reports routes
+    reports := api.Group("/reports")
+    reports.Get("/purchases", handlers.GetPurchasingReport)
+    reports.Get("/sales", handlers.GetSalesReport)
+    reports.Get("/books-stock", handlers.GetBooksStockReport)
+    reports.Get("/credits", handlers.GetCreditsReport)
+
     // Admin Only routes
     api.Use(middleware.AdminOnly())
 
