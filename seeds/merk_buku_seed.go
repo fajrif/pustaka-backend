@@ -74,6 +74,10 @@ func MerkBukuSeeder(db *gorm.DB) error {
 			Name: "Penilaian Sumatif Akhir Jenjang",
 		},
 		{
+			Code: "PSAJM",
+			Name: "PSAJ Madrasah",
+		},
+		{
 			Code: "UN",
 			Name: "Ujian Negara",
 		},

@@ -97,6 +97,7 @@ list_seeders() {
   echo -e "${GREEN}▶ sales_associates${NC} - Seed sales_associates table with sales associate data"
   echo -e "${GREEN}▶ expeditions${NC}      - Seed expeditions table with all expedition data"
   echo -e "${GREEN}▶ cities${NC}           - Seed cities table with all indonesian cities"
+  echo -e "${GREEN}▶ books${NC}            - Seed books table with defined data in seeds/files"
   echo ""
   echo -e "${YELLOW}To add more seeders:${NC}"
   echo "  1. Create a new file in seeds/ directory"
