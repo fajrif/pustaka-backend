@@ -1178,6 +1178,15 @@ paths:
         in: query
         name: price_max
         type: number
+      - description: Field to sort by (name, price, stock, year, periode, no_pages,
+          created_at, updated_at)
+        in: query
+        name: sort_by
+        type: string
+      - description: 'Sort order: asc or desc (default: desc)'
+        in: query
+        name: sort_order
+        type: string
       produces:
       - application/json
       responses:

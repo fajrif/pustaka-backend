@@ -30,6 +30,8 @@ import (
 // @Param kelas query string false "Filter by kelas code (e.g., 1, 2, A, B, ALL)"
 // @Param price_min query number false "Minimum price filter"
 // @Param price_max query number false "Maximum price filter"
+// @Param sort_by query string false "Field to sort by (name, price, stock, year, periode, no_pages, created_at, updated_at)"
+// @Param sort_order query string false "Sort order: asc or desc (default: desc)"
 // @Success 200 {object} map[string]interface{} "List of all books with pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -43,7 +45,35 @@ func GetAllBooks(c *fiber.Ctx) error {
 	conds := []string{}
 	args := []interface{}{}
 
-	query := config.DB.Order("created_at DESC")
+	// Whitelist of valid sortable fields to prevent SQL injection
+	validSortFields := map[string]string{
+		"name":       "books.name",
+		"price":      "books.price",
+		"stock":      "books.stock",
+		"year":       "books.year",
+		"periode":    "books.periode",
+		"no_pages":   "books.no_pages",
+		"created_at": "books.created_at",
+		"updated_at": "books.updated_at",
+	}
+
+	// Determine sort order
+	sortBy := c.Query("sort_by", "created_at")
+	sortOrder := strings.ToLower(c.Query("sort_order", "desc"))
+
+	// Validate sort_order
+	if sortOrder != "asc" && sortOrder != "desc" {
+		sortOrder = "desc"
+	}
+
+	// Get the validated sort field or default to created_at
+	sortField, ok := validSortFields[sortBy]
+	if !ok {
+		sortField = "books.created_at"
+	}
+
+	orderClause := sortField + " " + strings.ToUpper(sortOrder)
+	query := config.DB.Order(orderClause)
 	queryCount := config.DB.Model(&models.Book{})
 
 	// add params for not using pagination

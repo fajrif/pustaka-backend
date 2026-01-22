@@ -791,6 +791,18 @@ const docTemplate = `{
                         "description": "Maximum price filter",
                         "name": "price_max",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field to sort by (name, price, stock, year, periode, no_pages, created_at, updated_at)",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort order: asc or desc (default: desc)",
+                        "name": "sort_order",
+                        "in": "query"
                     }
                 ],
                 "responses": {
