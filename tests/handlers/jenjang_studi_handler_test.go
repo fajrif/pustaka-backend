@@ -35,7 +35,7 @@ func TestGetAllJenjangStudi(t *testing.T) {
 			AddRow(jenjangStudiID1, "JS001", "SD", "Test Description", "S", time.Now(), time.Now()).
 			AddRow(jenjangStudiID2, "JS002", "SMP", "Test Description", "S", time.Now(), time.Now())
 
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenjang_studi" ORDER BY created_at DESC`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenjang_studi" ORDER BY created_at ASC LIMIT 20`)).
 			WillReturnRows(rows)
 
 		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
@@ -66,7 +66,7 @@ func TestGetAllJenjangStudi(t *testing.T) {
 		jenjangStudiRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "period", "created_at", "updated_at"}).
 			AddRow(jenjangStudiID, "JS001", "Elementary", &description, "S", time.Now(), time.Now())
 
-		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenjang_studi" WHERE jenjang_studi.code ILIKE $1 OR jenjang_studi.name ILIKE $2 OR jenjang_studi.description ILIKE $3 ORDER BY created_at DESC`)).
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenjang_studi" WHERE jenjang_studi.code ILIKE $1 OR jenjang_studi.name ILIKE $2 OR jenjang_studi.description ILIKE $3 ORDER BY created_at ASC LIMIT 20`)).
 			WithArgs("%JS001%", "%JS001%", "%JS001%").
 			WillReturnRows(jenjangStudiRows)
 
@@ -97,7 +97,7 @@ func TestGetAllJenjangStudi(t *testing.T) {
 		jenjangStudiRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "period", "created_at", "updated_at"}).
 			AddRow(jenjangStudiID, "JS001", "Elementary", nil, "S", time.Now(), time.Now())
 
-		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenjang_studi" WHERE jenjang_studi.code ILIKE $1 OR jenjang_studi.name ILIKE $2 OR jenjang_studi.description ILIKE $3 ORDER BY created_at DESC`)).
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenjang_studi" WHERE jenjang_studi.code ILIKE $1 OR jenjang_studi.name ILIKE $2 OR jenjang_studi.description ILIKE $3 ORDER BY created_at ASC LIMIT 20`)).
 			WithArgs("%Elementary%", "%Elementary%", "%Elementary%").
 			WillReturnRows(jenjangStudiRows)
 
@@ -128,7 +128,7 @@ func TestGetAllJenjangStudi(t *testing.T) {
 		jenjangStudiRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "period", "created_at", "updated_at"}).
 			AddRow(jenjangStudiID, "JS001", "Elementary", "Sekolah Dasar", "S", time.Now(), time.Now())
 
-		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenjang_studi" WHERE jenjang_studi.code ILIKE $1 OR jenjang_studi.name ILIKE $2 OR jenjang_studi.description ILIKE $3 ORDER BY created_at DESC`)).
+		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "jenjang_studi" WHERE jenjang_studi.code ILIKE $1 OR jenjang_studi.name ILIKE $2 OR jenjang_studi.description ILIKE $3 ORDER BY created_at ASC LIMIT 20`)).
 			WithArgs("%Sekolah Dasar%", "%Sekolah Dasar%", "%Sekolah Dasar%").
 			WillReturnRows(jenjangStudiRows)
 

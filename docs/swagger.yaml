@@ -3798,10 +3798,6 @@ paths:
       - application/json
       description: Retrieve all sales transactions with their related entities
       parameters:
-      - description: Search by invoice number or sales associate name
-        in: query
-        name: search
-        type: string
       - description: 'Page number (default: 1)'
         in: query
         name: page
@@ -3810,13 +3806,50 @@ paths:
         in: query
         name: limit
         type: integer
-      - description: Filter by status (0=booking, 1=paid-off, 2=installment)
+      - description: Get all records without pagination
+        in: query
+        name: all
+        type: boolean
+      - description: Partial match on invoice number
+        in: query
+        name: no_invoice
+        type: string
+      - description: Partial match on sales associate name
+        in: query
+        name: sales_associate_name
+        type: string
+      - description: 'Start date for date range filter (ISO format: YYYY-MM-DD)'
+        in: query
+        name: transaction_date_from
+        type: string
+      - description: 'End date for date range filter (ISO format: YYYY-MM-DD)'
+        in: query
+        name: transaction_date_to
+        type: string
+      - description: 'Exact match: T (Tunai/Cash) or K (Kredit/Credit)'
+        in: query
+        name: payment_type
+        type: string
+      - description: 'Exact match: 0 (Pesanan), 1 (Lunas), 2 (Angsuran)'
         in: query
         name: status
         type: integer
-      - description: Filter by payment type (T=cash, K=credit)
+      - description: Minimum total amount
         in: query
-        name: payment_type
+        name: total_amount_min
+        type: number
+      - description: Maximum total amount
+        in: query
+        name: total_amount_max
+        type: number
+      - description: 'Field to sort by: no_invoice, sales_associate_name, transaction_date,
+          payment_type, total_amount, status'
+        in: query
+        name: sort_by
+        type: string
+      - description: 'Sort order: asc or desc (default: desc)'
+        in: query
+        name: sort_order
         type: string
       produces:
       - application/json

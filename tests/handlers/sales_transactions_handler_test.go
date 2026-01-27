@@ -32,7 +32,7 @@ func TestGetAllSalesTransactions(t *testing.T) {
 		assert.NoError(t, err)
 		defer testutil.CloseMockDB(db3)
 
-		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" ORDER BY created_at DESC`)).
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" ORDER BY sales_transactions.created_at desc LIMIT 20`)).
 			WillReturnError(gorm.ErrInvalidDB)
 
 		req := httptest.NewRequest("GET", "/sales-transactions", nil)
@@ -59,7 +59,7 @@ func TestGetAllSalesTransactions(t *testing.T) {
 			"created_at", "updated_at",
 		})
 
-		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" ORDER BY created_at DESC`)).
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" ORDER BY sales_transactions.created_at desc LIMIT 20`)).
 			WillReturnRows(transactionRows)
 
 		countRows := sqlmock.NewRows([]string{"count"}).AddRow(0)

@@ -33,8 +33,9 @@ type CreateTransactionItemRequest struct {
 // calculateItemSubtotal calculates the subtotal for an item with promotion and discount
 // Formula: subtotal = (price - promotion) * (1 - discount/100) * quantity
 // Example: price=10000, quantity=3, promotion=50, discount=10%
-//   adjustedPrice = 10000 - 50 = 9950
-//   subtotal = 9950 * (1 - 0.10) * 3 = 9950 * 0.90 * 3 = 26865
+//
+//	adjustedPrice = 10000 - 50 = 9950
+//	subtotal = 9950 * (1 - 0.10) * 3 = 9950 * 0.90 * 3 = 26865
 func calculateItemSubtotal(price float64, quantity int, promotion float64, discount float64) float64 {
 	adjustedPrice := price - promotion
 	if adjustedPrice < 0 {
@@ -116,11 +117,19 @@ func generateInstallmentNumber(db *gorm.DB) (string, error) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param search query string false "Search by invoice number or sales associate name"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of items per page (default: 20)"
-// @Param status query int false "Filter by status (0=booking, 1=paid-off, 2=installment)"
-// @Param payment_type query string false "Filter by payment type (T=cash, K=credit)"
+// @Param all query bool false "Get all records without pagination"
+// @Param no_invoice query string false "Partial match on invoice number"
+// @Param sales_associate_name query string false "Partial match on sales associate name"
+// @Param transaction_date_from query string false "Start date for date range filter (ISO format: YYYY-MM-DD)"
+// @Param transaction_date_to query string false "End date for date range filter (ISO format: YYYY-MM-DD)"
+// @Param payment_type query string false "Exact match: T (Tunai/Cash) or K (Kredit/Credit)"
+// @Param status query int false "Exact match: 0 (Pesanan), 1 (Lunas), 2 (Angsuran)"
+// @Param total_amount_min query number false "Minimum total amount"
+// @Param total_amount_max query number false "Maximum total amount"
+// @Param sort_by query string false "Field to sort by: no_invoice, sales_associate_name, transaction_date, payment_type, total_amount, status"
+// @Param sort_order query string false "Sort order: asc or desc (default: desc)"
 // @Success 200 {object} map[string]interface{} "List of all sales transactions with pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -131,7 +140,10 @@ func GetAllSalesTransactions(c *fiber.Ctx) error {
 	// Get pagination parameters
 	pagination := helpers.GetPaginationParams(c)
 
-	query := config.DB.Order("created_at DESC")
+	// Track if we need to join sales_associates table
+	needsSalesAssociateJoin := false
+
+	query := config.DB.Model(&models.SalesTransaction{})
 	queryCount := config.DB.Model(&models.SalesTransaction{})
 
 	// add params for not using pagination
@@ -140,28 +152,103 @@ func GetAllSalesTransactions(c *fiber.Ctx) error {
 		pagination.Offset = 0 // No offset
 	}
 
-	// Filter search
-	if searchQuery := c.Query("search"); searchQuery != "" {
-		searchTerm := "%" + searchQuery + "%"
-		cond := "sales_transactions.no_invoice ILIKE ? OR sales_associates.name ILIKE ?"
-		args := []interface{}{searchTerm, searchTerm}
-
-		query = query.Joins("LEFT JOIN sales_associates ON sales_transactions.sales_associate_id = sales_associates.id").
-			Where(cond, args...)
-		queryCount = queryCount.Joins("LEFT JOIN sales_associates ON sales_transactions.sales_associate_id = sales_associates.id").
-			Where(cond, args...)
+	// Filter by invoice number (partial match)
+	if noInvoice := c.Query("no_invoice"); noInvoice != "" {
+		searchTerm := "%" + noInvoice + "%"
+		query = query.Where("sales_transactions.no_invoice ILIKE ?", searchTerm)
+		queryCount = queryCount.Where("sales_transactions.no_invoice ILIKE ?", searchTerm)
 	}
 
-	// Filter by status
+	// Filter by sales associate name (partial match)
+	if salesAssociateName := c.Query("sales_associate_name"); salesAssociateName != "" {
+		searchTerm := "%" + salesAssociateName + "%"
+		needsSalesAssociateJoin = true
+		query = query.Where("sales_associates.name ILIKE ?", searchTerm)
+		queryCount = queryCount.Where("sales_associates.name ILIKE ?", searchTerm)
+	}
+
+	// Filter by transaction date range (date-only comparison)
+	if dateFrom := c.Query("transaction_date_from"); dateFrom != "" {
+		// Validate date format and parse
+		if parsedDate, err := time.Parse("2006-01-02", dateFrom); err == nil {
+			// Use start of day
+			startOfDay := time.Date(parsedDate.Year(), parsedDate.Month(), parsedDate.Day(), 0, 0, 0, 0, time.UTC)
+			query = query.Where("sales_transactions.transaction_date >= ?", startOfDay)
+			queryCount = queryCount.Where("sales_transactions.transaction_date >= ?", startOfDay)
+		}
+	}
+
+	if dateTo := c.Query("transaction_date_to"); dateTo != "" {
+		// Validate date format and parse
+		if parsedDate, err := time.Parse("2006-01-02", dateTo); err == nil {
+			// Use end of day (23:59:59.999999999)
+			endOfDay := time.Date(parsedDate.Year(), parsedDate.Month(), parsedDate.Day(), 23, 59, 59, 999999999, time.UTC)
+			query = query.Where("sales_transactions.transaction_date <= ?", endOfDay)
+			queryCount = queryCount.Where("sales_transactions.transaction_date <= ?", endOfDay)
+		}
+	}
+
+	// Filter by status (exact match)
 	if status := c.Query("status"); status != "" {
 		query = query.Where("sales_transactions.status = ?", status)
 		queryCount = queryCount.Where("sales_transactions.status = ?", status)
 	}
 
-	// Filter by payment type
+	// Filter by payment type (exact match)
 	if paymentType := c.Query("payment_type"); paymentType != "" {
 		query = query.Where("sales_transactions.payment_type = ?", paymentType)
 		queryCount = queryCount.Where("sales_transactions.payment_type = ?", paymentType)
+	}
+
+	// Filter by total amount range
+	if totalAmountMin := c.Query("total_amount_min"); totalAmountMin != "" {
+		if minAmount, err := strconv.ParseFloat(totalAmountMin, 64); err == nil {
+			query = query.Where("sales_transactions.total_amount >= ?", minAmount)
+			queryCount = queryCount.Where("sales_transactions.total_amount >= ?", minAmount)
+		}
+	}
+
+	if totalAmountMax := c.Query("total_amount_max"); totalAmountMax != "" {
+		if maxAmount, err := strconv.ParseFloat(totalAmountMax, 64); err == nil {
+			query = query.Where("sales_transactions.total_amount <= ?", maxAmount)
+			queryCount = queryCount.Where("sales_transactions.total_amount <= ?", maxAmount)
+		}
+	}
+
+	// Apply sales associate join if needed
+	if needsSalesAssociateJoin {
+		query = query.Joins("LEFT JOIN sales_associates ON sales_transactions.sales_associate_id = sales_associates.id")
+		queryCount = queryCount.Joins("LEFT JOIN sales_associates ON sales_transactions.sales_associate_id = sales_associates.id")
+	}
+
+	// Handle sorting
+	sortBy := c.Query("sort_by")
+	sortOrder := c.Query("sort_order")
+
+	// Default sort order is descending
+	if sortOrder != "asc" && sortOrder != "desc" {
+		sortOrder = "desc"
+	}
+
+	// Map sort fields to actual column names
+	sortFieldMap := map[string]string{
+		"no_invoice":           "sales_transactions.no_invoice",
+		"sales_associate_name": "sales_associates.name",
+		"transaction_date":     "sales_transactions.transaction_date",
+		"payment_type":         "sales_transactions.payment_type",
+		"total_amount":         "sales_transactions.total_amount",
+		"status":               "sales_transactions.status",
+	}
+
+	if sortField, ok := sortFieldMap[sortBy]; ok {
+		// If sorting by sales_associate_name, ensure join is applied
+		if sortBy == "sales_associate_name" && !needsSalesAssociateJoin {
+			query = query.Joins("LEFT JOIN sales_associates ON sales_transactions.sales_associate_id = sales_associates.id")
+		}
+		query = query.Order(sortField + " " + sortOrder)
+	} else {
+		// Default sort by created_at
+		query = query.Order("sales_transactions.created_at " + sortOrder)
 	}
 
 	// Apply pagination and fetch data
@@ -215,6 +302,9 @@ func GetSalesTransaction(c *fiber.Ctx) error {
 		Preload("SalesAssociate.City").
 		Preload("Items").
 		Preload("Items.Book").
+		Preload("Items.Book.BidangStudi").
+		Preload("Items.Book.JenjangStudi").
+		Preload("Items.Book.Curriculum").
 		Preload("Items.Book.Publisher").
 		Preload("Items.Book.JenisBuku").
 		Preload("Items.Book.MerkBuku").

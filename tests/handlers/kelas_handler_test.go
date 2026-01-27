@@ -35,7 +35,7 @@ func TestGetAllKelas(t *testing.T) {
 			AddRow(kelasID1, "K001", "Class 1", "Test Description", time.Now(), time.Now()).
 			AddRow(kelasID2, "K002", "Class 2", "Test Description", time.Now(), time.Now())
 
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "kelas" ORDER BY created_at DESC`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "kelas" ORDER BY created_at ASC LIMIT 20`)).
 			WillReturnRows(rows)
 
 		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
@@ -66,7 +66,7 @@ func TestGetAllKelas(t *testing.T) {
 		kelasRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
 			AddRow(kelasID, "K001", "Grade 1", &description, time.Now(), time.Now())
 
-		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "kelas" WHERE kelas.code ILIKE $1 OR kelas.name ILIKE $2 OR kelas.description ILIKE $3 ORDER BY created_at DESC`)).
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "kelas" WHERE kelas.code ILIKE $1 OR kelas.name ILIKE $2 OR kelas.description ILIKE $3 ORDER BY created_at ASC LIMIT 20`)).
 			WithArgs("%K001%", "%K001%", "%K001%").
 			WillReturnRows(kelasRows)
 
@@ -97,7 +97,7 @@ func TestGetAllKelas(t *testing.T) {
 		kelasRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "created_at", "updated_at"}).
 			AddRow(kelasID, "K001", "Grade", nil, time.Now(), time.Now())
 
-		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "kelas" WHERE kelas.code ILIKE $1 OR kelas.name ILIKE $2 OR kelas.description ILIKE $3 ORDER BY created_at DESC`)).
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "kelas" WHERE kelas.code ILIKE $1 OR kelas.name ILIKE $2 OR kelas.description ILIKE $3 ORDER BY created_at ASC LIMIT 20`)).
 			WithArgs("%Grade%", "%Grade%", "%Grade%").
 			WillReturnRows(kelasRows)
 

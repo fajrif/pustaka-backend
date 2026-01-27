@@ -35,7 +35,7 @@ func TestGetAllCities(t *testing.T) {
 			AddRow(cityID1, "JKT", "Jakarta", time.Now(), time.Now()).
 			AddRow(cityID2, "BDG", "Bandung", time.Now(), time.Now())
 
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" ORDER BY created_at DESC`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" ORDER BY name ASC LIMIT 20`)).
 			WillReturnRows(cityRows)
 
 		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
@@ -62,7 +62,7 @@ func TestGetAllCities(t *testing.T) {
 
 		cityRows := sqlmock.NewRows([]string{"id", "code", "name", "created_at", "updated_at"})
 
-		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" ORDER BY created_at DESC LIMIT 20`)).
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" ORDER BY name ASC LIMIT 20`)).
 			WillReturnRows(cityRows)
 
 		countRows := sqlmock.NewRows([]string{"count"}).AddRow(0)
@@ -92,7 +92,7 @@ func TestGetAllCities(t *testing.T) {
 		cityRows := sqlmock.NewRows([]string{"id", "code", "name", "created_at", "updated_at"}).
 			AddRow(cityID, "JKT", "Jakarta", time.Now(), time.Now())
 
-		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE cities.code ILIKE $1 OR cities.name ILIKE $2 ORDER BY created_at DESC LIMIT 20`)).
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE cities.code ILIKE $1 OR cities.name ILIKE $2 ORDER BY name ASC LIMIT 20`)).
 			WithArgs("%JKT%", "%JKT%").
 			WillReturnRows(cityRows)
 
@@ -124,7 +124,7 @@ func TestGetAllCities(t *testing.T) {
 		cityRows := sqlmock.NewRows([]string{"id", "code", "name", "created_at", "updated_at"}).
 			AddRow(cityID, "JKT", "Jakarta", time.Now(), time.Now())
 
-		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE cities.code ILIKE $1 OR cities.name ILIKE $2 ORDER BY created_at DESC LIMIT 20`)).
+		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "cities" WHERE cities.code ILIKE $1 OR cities.name ILIKE $2 ORDER BY name ASC LIMIT 20`)).
 			WithArgs("%Jakarta%", "%Jakarta%").
 			WillReturnRows(cityRows)
 

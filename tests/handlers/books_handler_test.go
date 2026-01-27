@@ -35,7 +35,7 @@ func TestGetAllBooks(t *testing.T) {
 			AddRow(bookID1, "Mathematics Grade 1", "Test book description", "2024", nil, nil, 0, 1, nil, nil, nil, nil, nil, nil, 1, nil, 50000.00, time.Now(), time.Now()).
 			AddRow(bookID2, "Science Grade 2", "Test book description", "2024", nil, nil, 0, 1, nil, nil, nil, nil, nil, nil, 1, nil, 75000.00, time.Now(), time.Now())
 
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" ORDER BY created_at DESC LIMIT 20`)).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" ORDER BY books.created_at DESC LIMIT 20`)).
 			WillReturnRows(bookRows)
 
 		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
@@ -62,7 +62,7 @@ func TestGetAllBooks(t *testing.T) {
 
 		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "author", "isbn", "stock", "periode", "merk_buku_id", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas", "curriculum_id", "no_pages", "publisher_id", "price", "created_at", "updated_at"})
 
-		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" ORDER BY created_at DESC LIMIT 20`)).
+		mock2.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" ORDER BY books.created_at DESC LIMIT 20`)).
 			WillReturnRows(bookRows)
 
 		countRows := sqlmock.NewRows([]string{"count"}).AddRow(0)
@@ -87,7 +87,7 @@ func TestGetAllBooks(t *testing.T) {
 		assert.NoError(t, err)
 		defer testutil.CloseMockDB(db3)
 
-		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" ORDER BY created_at DESC LIMIT 20`)).
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" ORDER BY books.created_at DESC LIMIT 20`)).
 			WillReturnError(gorm.ErrInvalidDB)
 
 		req := httptest.NewRequest("GET", "/books", nil)
@@ -113,7 +113,7 @@ func TestGetAllBooks(t *testing.T) {
 		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "author", "isbn", "stock", "periode", "merk_buku_id", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas", "curriculum_id", "no_pages", "publisher_id", "price", "created_at", "updated_at"}).
 			AddRow(bookID, "Mathematics Grade 1", &description, "2024", nil, nil, 0, 1, nil, nil, nil, nil, nil, nil, 1, nil, 50000.00, time.Now(), time.Now())
 
-		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" WHERE (books.name ILIKE $1 OR books.description ILIKE $2) ORDER BY created_at DESC LIMIT 20`)).
+		mock3.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" WHERE (books.name ILIKE $1 OR books.description ILIKE $2) ORDER BY books.created_at DESC LIMIT 20`)).
 			WithArgs("%Mathematics%", "%Mathematics%").
 			WillReturnRows(bookRows)
 
@@ -146,7 +146,7 @@ func TestGetAllBooks(t *testing.T) {
 		bookRows := sqlmock.NewRows([]string{"id", "name", "description", "year", "author", "isbn", "stock", "periode", "merk_buku_id", "jenis_buku_id", "jenjang_studi_id", "bidang_studi_id", "kelas", "curriculum_id", "no_pages", "publisher_id", "price", "created_at", "updated_at"}).
 			AddRow(bookID, "Science Grade 2", &description, "2024", nil, nil, 0, 1, nil, nil, nil, nil, nil, nil, 1, nil, 75000.00, time.Now(), time.Now())
 
-		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" WHERE (books.name ILIKE $1 OR books.description ILIKE $2) ORDER BY created_at DESC LIMIT 20`)).
+		mock4.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "books" WHERE (books.name ILIKE $1 OR books.description ILIKE $2) ORDER BY books.created_at DESC LIMIT 20`)).
 			WithArgs("%Science%", "%Science%").
 			WillReturnRows(bookRows)
 

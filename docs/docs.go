@@ -4753,12 +4753,6 @@ const docTemplate = `{
                 "summary": "Get all sales transactions",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Search by invoice number or sales associate name",
-                        "name": "search",
-                        "in": "query"
-                    },
-                    {
                         "type": "integer",
                         "description": "Page number (default: 1)",
                         "name": "page",
@@ -4771,15 +4765,69 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "integer",
-                        "description": "Filter by status (0=booking, 1=paid-off, 2=installment)",
-                        "name": "status",
+                        "type": "boolean",
+                        "description": "Get all records without pagination",
+                        "name": "all",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Filter by payment type (T=cash, K=credit)",
+                        "description": "Partial match on invoice number",
+                        "name": "no_invoice",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Partial match on sales associate name",
+                        "name": "sales_associate_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date for date range filter (ISO format: YYYY-MM-DD)",
+                        "name": "transaction_date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date for date range filter (ISO format: YYYY-MM-DD)",
+                        "name": "transaction_date_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Exact match: T (Tunai/Cash) or K (Kredit/Credit)",
                         "name": "payment_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Exact match: 0 (Pesanan), 1 (Lunas), 2 (Angsuran)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Minimum total amount",
+                        "name": "total_amount_min",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Maximum total amount",
+                        "name": "total_amount_max",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field to sort by: no_invoice, sales_associate_name, transaction_date, payment_type, total_amount, status",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort order: asc or desc (default: desc)",
+                        "name": "sort_order",
                         "in": "query"
                     }
                 ],
