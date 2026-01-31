@@ -16,7 +16,7 @@ import (
 // CreatePurchaseTransactionRequest represents the request body for creating a purchase transaction
 type CreatePurchaseTransactionRequest struct {
 	SupplierID   string                             `json:"supplier_id"`
-	PurchaseDate time.Time                          `json:"purchase_date"`
+	PurchaseDate models.Date                        `json:"purchase_date"`
 	Note         *string                            `json:"note"`
 	Items        []CreatePurchaseTransactionItemReq `json:"items"`
 }
@@ -31,7 +31,7 @@ type CreatePurchaseTransactionItemReq struct {
 // UpdatePurchaseTransactionRequest represents the request body for updating a purchase transaction
 type UpdatePurchaseTransactionRequest struct {
 	SupplierID   *string                            `json:"supplier_id"`
-	PurchaseDate *time.Time                         `json:"purchase_date"`
+	PurchaseDate *models.Date                       `json:"purchase_date"`
 	Note         *string                            `json:"note"`
 	Items        []CreatePurchaseTransactionItemReq `json:"items,omitempty"`
 }
@@ -177,9 +177,12 @@ func GetPurchaseTransaction(c *fiber.Ctx) error {
 		Preload("Supplier").
 		Preload("Items").
 		Preload("Items.Book").
-		Preload("Items.Book.MerkBuku").
-		Preload("Items.Book.JenisBuku").
+		Preload("Items.Book.BidangStudi").
+		Preload("Items.Book.JenjangStudi").
+		Preload("Items.Book.Curriculum").
 		Preload("Items.Book.Publisher").
+		Preload("Items.Book.JenisBuku").
+		Preload("Items.Book.MerkBuku").
 		Where("id = ?", id).First(&transaction).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Purchase transaction not found",

@@ -6301,7 +6301,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "purchase_date": {
-                    "type": "string"
+                    "$ref": "#/definitions/models.Date"
                 },
                 "supplier_id": {
                     "type": "string"
@@ -6404,7 +6404,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "purchase_date": {
-                    "type": "string"
+                    "$ref": "#/definitions/models.Date"
                 },
                 "supplier_id": {
                     "type": "string"
@@ -6652,6 +6652,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Date": {
+            "type": "object",
+            "properties": {
+                "time.Time": {
                     "type": "string"
                 }
             }
@@ -6915,7 +6923,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "purchase_date": {
-                    "type": "string"
+                    "$ref": "#/definitions/models.Date"
                 },
                 "receipt_image_url": {
                     "type": "string"

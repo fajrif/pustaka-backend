@@ -11,7 +11,7 @@ type PurchaseTransaction struct {
 	SupplierID      uuid.UUID                 `gorm:"type:uuid;not null" json:"supplier_id"`
 	Supplier        *Publisher                `gorm:"foreignKey:SupplierID" json:"supplier,omitempty"`
 	NoInvoice       string                    `gorm:"unique;not null" json:"no_invoice"`
-	PurchaseDate    time.Time                 `gorm:"not null" json:"purchase_date"`
+	PurchaseDate    Date                      `gorm:"type:date;not null" json:"purchase_date"`
 	TotalAmount     float64                   `gorm:"not null;default:0" json:"total_amount"`
 	Status          int                       `gorm:"not null;default:0" json:"status"` // 0 = pending, 1 = completed, 2 = cancelled
 	ReceiptImageUrl *string                   `json:"receipt_image_url"`
