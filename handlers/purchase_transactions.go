@@ -72,13 +72,17 @@ func generatePurchaseInvoiceNumber(db *gorm.DB) (string, error) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param search query string false "Search by invoice number or supplier name"
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Number of items per page (default: 20)"
-// @Param status query int false "Filter by status (0=pending, 1=completed, 2=cancelled)"
-// @Param supplier_id query string false "Filter by supplier ID"
-// @Param start_date query string false "Filter by start date (YYYY-MM-DD)"
-// @Param end_date query string false "Filter by end date (YYYY-MM-DD)"
+// @Param no_invoice query string false "Partial match on invoice number (No PO)"
+// @Param supplier_name query string false "Partial match on supplier name or code"
+// @Param purchase_date_from query string false "Start date for date range filter (ISO format: YYYY-MM-DD)"
+// @Param purchase_date_to query string false "End date for date range filter (ISO format: YYYY-MM-DD)"
+// @Param total_amount_min query number false "Minimum total amount"
+// @Param total_amount_max query number false "Maximum total amount"
+// @Param status query int false "Exact match: 0 (Pending), 1 (Selesai), 2 (Dibatalkan)"
+// @Param sort_by query string false "Field to sort by: no_invoice, supplier_name, purchase_date, total_amount, status"
+// @Param sort_order query string false "Sort order: asc or desc (default: desc)"
 // @Success 200 {object} map[string]interface{} "List of all purchase transactions with pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
@@ -89,8 +93,11 @@ func GetAllPurchaseTransactions(c *fiber.Ctx) error {
 	// Get pagination parameters
 	pagination := helpers.GetPaginationParams(c)
 
-	query := config.DB.Order("created_at DESC")
+	query := config.DB.Model(&models.PurchaseTransaction{})
 	queryCount := config.DB.Model(&models.PurchaseTransaction{})
+
+	// Track if we need to join publishers table
+	needsPublisherJoin := false
 
 	// add params for not using pagination
 	if c.Query("all") == "true" {
@@ -98,16 +105,43 @@ func GetAllPurchaseTransactions(c *fiber.Ctx) error {
 		pagination.Offset = 0 // No offset
 	}
 
-	// Filter search
-	if searchQuery := c.Query("search"); searchQuery != "" {
-		searchTerm := "%" + searchQuery + "%"
-		cond := "purchase_transactions.no_invoice ILIKE ? OR publishers.name ILIKE ?"
-		args := []interface{}{searchTerm, searchTerm}
+	// Filter by no_invoice (partial match)
+	if noInvoice := c.Query("no_invoice"); noInvoice != "" {
+		searchTerm := "%" + noInvoice + "%"
+		query = query.Where("purchase_transactions.no_invoice ILIKE ?", searchTerm)
+		queryCount = queryCount.Where("purchase_transactions.no_invoice ILIKE ?", searchTerm)
+	}
 
+	// Filter by supplier_name (search in both name and code)
+	if supplierName := c.Query("supplier_name"); supplierName != "" {
+		searchTerm := "%" + supplierName + "%"
+		needsPublisherJoin = true
 		query = query.Joins("LEFT JOIN publishers ON purchase_transactions.supplier_id = publishers.id").
-			Where(cond, args...)
+			Where("publishers.name ILIKE ? OR publishers.code ILIKE ?", searchTerm, searchTerm)
 		queryCount = queryCount.Joins("LEFT JOIN publishers ON purchase_transactions.supplier_id = publishers.id").
-			Where(cond, args...)
+			Where("publishers.name ILIKE ? OR publishers.code ILIKE ?", searchTerm, searchTerm)
+	}
+
+	// Filter by purchase_date range
+	if dateFrom := c.Query("purchase_date_from"); dateFrom != "" {
+		query = query.Where("purchase_transactions.purchase_date >= ?", dateFrom)
+		queryCount = queryCount.Where("purchase_transactions.purchase_date >= ?", dateFrom)
+	}
+
+	if dateTo := c.Query("purchase_date_to"); dateTo != "" {
+		query = query.Where("purchase_transactions.purchase_date <= ?", dateTo)
+		queryCount = queryCount.Where("purchase_transactions.purchase_date <= ?", dateTo)
+	}
+
+	// Filter by total_amount range
+	if minAmount := c.Query("total_amount_min"); minAmount != "" {
+		query = query.Where("purchase_transactions.total_amount >= ?", minAmount)
+		queryCount = queryCount.Where("purchase_transactions.total_amount >= ?", minAmount)
+	}
+
+	if maxAmount := c.Query("total_amount_max"); maxAmount != "" {
+		query = query.Where("purchase_transactions.total_amount <= ?", maxAmount)
+		queryCount = queryCount.Where("purchase_transactions.total_amount <= ?", maxAmount)
 	}
 
 	// Filter by status
@@ -116,21 +150,45 @@ func GetAllPurchaseTransactions(c *fiber.Ctx) error {
 		queryCount = queryCount.Where("purchase_transactions.status = ?", status)
 	}
 
-	// Filter by supplier
-	if supplierID := c.Query("supplier_id"); supplierID != "" {
-		query = query.Where("purchase_transactions.supplier_id = ?", supplierID)
-		queryCount = queryCount.Where("purchase_transactions.supplier_id = ?", supplierID)
+	// Sorting
+	sortBy := c.Query("sort_by")
+	sortOrder := c.Query("sort_order")
+
+	// Default sort order
+	if sortOrder == "" {
+		sortOrder = "desc"
 	}
 
-	// Filter by date range
-	if startDate := c.Query("start_date"); startDate != "" {
-		query = query.Where("purchase_transactions.purchase_date >= ?", startDate)
-		queryCount = queryCount.Where("purchase_transactions.purchase_date >= ?", startDate)
+	// Validate sort order
+	if sortOrder != "asc" && sortOrder != "desc" {
+		sortOrder = "desc"
 	}
 
-	if endDate := c.Query("end_date"); endDate != "" {
-		query = query.Where("purchase_transactions.purchase_date <= ?", endDate+" 23:59:59")
-		queryCount = queryCount.Where("purchase_transactions.purchase_date <= ?", endDate+" 23:59:59")
+	// Apply sorting
+	if sortBy == "supplier_name" {
+		// Need to join publishers table for sorting by supplier name
+		if !needsPublisherJoin {
+			query = query.Joins("LEFT JOIN publishers ON purchase_transactions.supplier_id = publishers.id")
+		}
+		query = query.Order("publishers.name " + sortOrder)
+	} else if sortBy != "" {
+		// Validate sort_by field to prevent SQL injection
+		validSortFields := map[string]bool{
+			"no_invoice":    true,
+			"purchase_date": true,
+			"total_amount":  true,
+			"status":        true,
+			"created_at":    true,
+		}
+		if validSortFields[sortBy] {
+			query = query.Order("purchase_transactions." + sortBy + " " + sortOrder)
+		} else {
+			// Default to created_at if invalid field
+			query = query.Order("purchase_transactions.created_at " + sortOrder)
+		}
+	} else {
+		// Default sorting by created_at desc
+		query = query.Order("purchase_transactions.created_at " + sortOrder)
 	}
 
 	// Apply pagination and fetch data
@@ -139,6 +197,11 @@ func GetAllPurchaseTransactions(c *fiber.Ctx) error {
 		Preload("Supplier").
 		Preload("Items").
 		Preload("Items.Book").
+		Preload("Items.Book.BidangStudi").
+		Preload("Items.Book.JenjangStudi").
+		Preload("Items.Book.Curriculum").
+		Preload("Items.Book.Publisher").
+		Preload("Items.Book.JenisBuku").
 		Preload("Items.Book.MerkBuku").
 		Find(&transactions).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

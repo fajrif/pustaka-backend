@@ -3049,10 +3049,6 @@ paths:
       - application/json
       description: Retrieve all purchase transactions with their related entities
       parameters:
-      - description: Search by invoice number or supplier name
-        in: query
-        name: search
-        type: string
       - description: 'Page number (default: 1)'
         in: query
         name: page
@@ -3061,21 +3057,42 @@ paths:
         in: query
         name: limit
         type: integer
-      - description: Filter by status (0=pending, 1=completed, 2=cancelled)
+      - description: Partial match on invoice number (No PO)
+        in: query
+        name: no_invoice
+        type: string
+      - description: Partial match on supplier name or code
+        in: query
+        name: supplier_name
+        type: string
+      - description: 'Start date for date range filter (ISO format: YYYY-MM-DD)'
+        in: query
+        name: purchase_date_from
+        type: string
+      - description: 'End date for date range filter (ISO format: YYYY-MM-DD)'
+        in: query
+        name: purchase_date_to
+        type: string
+      - description: Minimum total amount
+        in: query
+        name: total_amount_min
+        type: number
+      - description: Maximum total amount
+        in: query
+        name: total_amount_max
+        type: number
+      - description: 'Exact match: 0 (Pending), 1 (Selesai), 2 (Dibatalkan)'
         in: query
         name: status
         type: integer
-      - description: Filter by supplier ID
+      - description: 'Field to sort by: no_invoice, supplier_name, purchase_date,
+          total_amount, status'
         in: query
-        name: supplier_id
+        name: sort_by
         type: string
-      - description: Filter by start date (YYYY-MM-DD)
+      - description: 'Sort order: asc or desc (default: desc)'
         in: query
-        name: start_date
-        type: string
-      - description: Filter by end date (YYYY-MM-DD)
-        in: query
-        name: end_date
+        name: sort_order
         type: string
       produces:
       - application/json
