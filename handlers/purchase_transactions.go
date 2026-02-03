@@ -81,7 +81,9 @@ func generatePurchaseInvoiceNumber(db *gorm.DB) (string, error) {
 // @Param total_amount_min query number false "Minimum total amount"
 // @Param total_amount_max query number false "Maximum total amount"
 // @Param status query int false "Exact match: 0 (Pending), 1 (Selesai), 2 (Dibatalkan)"
-// @Param sort_by query string false "Field to sort by: no_invoice, supplier_name, purchase_date, total_amount, status"
+// @Param created_at_from query string false "Start date for date range filter (ISO format: YYYY-MM-DDTHH:mm:ss.sssZ)"
+// @Param created_at_to query string false "End date for date range filter (ISO format: YYYY-MM-DDTHH:mm:ss.sssZ)"
+// @Param sort_by query string false "Field to sort by: no_invoice, supplier_name, purchase_date, total_amount, status, created_at"
 // @Param sort_order query string false "Sort order: asc or desc (default: desc)"
 // @Success 200 {object} map[string]interface{} "List of all purchase transactions with pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
@@ -131,6 +133,21 @@ func GetAllPurchaseTransactions(c *fiber.Ctx) error {
 	if dateTo := c.Query("purchase_date_to"); dateTo != "" {
 		query = query.Where("purchase_transactions.purchase_date <= ?", dateTo)
 		queryCount = queryCount.Where("purchase_transactions.purchase_date <= ?", dateTo)
+	}
+
+	// Filter by created_at range
+	if createdAtFrom := c.Query("created_at_from"); createdAtFrom != "" {
+		if t, err := time.Parse(time.RFC3339, createdAtFrom); err == nil {
+			query = query.Where("purchase_transactions.created_at >= ?", t)
+			queryCount = queryCount.Where("purchase_transactions.created_at >= ?", t)
+		}
+	}
+
+	if createdAtTo := c.Query("created_at_to"); createdAtTo != "" {
+		if t, err := time.Parse(time.RFC3339, createdAtTo); err == nil {
+			query = query.Where("purchase_transactions.created_at <= ?", t)
+			queryCount = queryCount.Where("purchase_transactions.created_at <= ?", t)
+		}
 	}
 
 	// Filter by total_amount range
