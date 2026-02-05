@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"pustaka-backend/config"
+	"pustaka-backend/helpers"
 	"pustaka-backend/models"
 	"time"
 
@@ -55,16 +56,22 @@ type CreditReportItem struct {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 20)"
+// @Param all query bool false "Get all records without pagination"
 // @Param start_date query string false "Start date (YYYY-MM-DD)"
 // @Param end_date query string false "End date (YYYY-MM-DD)"
 // @Param supplier_id query string false "Filter by supplier ID"
 // @Param status query int false "Filter by status (0=pending, 1=completed, 2=cancelled)"
-// @Success 200 {object} map[string]interface{} "Purchasing report with summary"
+// @Success 200 {object} map[string]interface{} "Purchasing report with summary and pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/reports/purchases [get]
 func GetPurchasingReport(c *fiber.Ctx) error {
 	var transactions []models.PurchaseTransaction
+
+	// Get pagination parameters
+	pagination := helpers.GetPaginationParams(c)
 
 	query := config.DB.Order("purchase_date DESC").
 		Preload("Supplier").
@@ -72,26 +79,39 @@ func GetPurchasingReport(c *fiber.Ctx) error {
 		Preload("Items.Book").
 		Preload("Items.Book.MerkBuku")
 
+	queryCount := config.DB.Model(&models.PurchaseTransaction{})
+
+	// add params for not using pagination
+	if c.Query("all") == "true" {
+		pagination.Limit = -1 // No limit
+		pagination.Offset = 0 // No offset
+	}
+
 	// Filter by date range
 	if startDate := c.Query("start_date"); startDate != "" {
 		query = query.Where("purchase_date >= ?", startDate)
+		queryCount = queryCount.Where("purchase_date >= ?", startDate)
 	}
 
 	if endDate := c.Query("end_date"); endDate != "" {
 		query = query.Where("purchase_date <= ?", endDate+" 23:59:59")
+		queryCount = queryCount.Where("purchase_date <= ?", endDate+" 23:59:59")
 	}
 
 	// Filter by supplier
 	if supplierID := c.Query("supplier_id"); supplierID != "" {
 		query = query.Where("supplier_id = ?", supplierID)
+		queryCount = queryCount.Where("supplier_id = ?", supplierID)
 	}
 
 	// Filter by status
 	if status := c.Query("status"); status != "" {
 		query = query.Where("status = ?", status)
+		queryCount = queryCount.Where("status = ?", status)
 	}
 
-	if err := query.Find(&transactions).Error; err != nil {
+	// Apply pagination and fetch data
+	if err := query.Offset(pagination.Offset).Limit(pagination.Limit).Find(&transactions).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch purchasing report",
 		})
@@ -108,10 +128,18 @@ func GetPurchasingReport(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(fiber.Map{
-		"data":    transactions,
-		"summary": summary,
-	})
+	// Create pagination response
+	response, err := helpers.CreatePaginationResponse(queryCount, transactions, "data", pagination.Page, pagination.Limit)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create pagination response",
+		})
+	}
+
+	// Add summary to response
+	response["summary"] = summary
+
+	return c.JSON(response)
 }
 
 // GetSalesReport godoc
@@ -121,17 +149,23 @@ func GetPurchasingReport(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 20)"
+// @Param all query bool false "Get all records without pagination"
 // @Param start_date query string false "Start date (YYYY-MM-DD)"
 // @Param end_date query string false "End date (YYYY-MM-DD)"
 // @Param payment_type query string false "Filter by payment type (T=cash, K=credit, all=both)"
 // @Param status query int false "Filter by status (0=booking, 1=paid-off, 2=installment)"
 // @Param sales_associate_id query string false "Filter by sales associate ID"
-// @Success 200 {object} map[string]interface{} "Sales report with summary"
+// @Success 200 {object} map[string]interface{} "Sales report with summary and pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/reports/sales [get]
 func GetSalesReport(c *fiber.Ctx) error {
 	var transactions []models.SalesTransaction
+
+	// Get pagination parameters
+	pagination := helpers.GetPaginationParams(c)
 
 	query := config.DB.Order("transaction_date DESC").
 		Preload("Biller").
@@ -142,31 +176,45 @@ func GetSalesReport(c *fiber.Ctx) error {
 		Preload("Payments").
 		Preload("Shippings")
 
+	queryCount := config.DB.Model(&models.SalesTransaction{})
+
+	// add params for not using pagination
+	if c.Query("all") == "true" {
+		pagination.Limit = -1 // No limit
+		pagination.Offset = 0 // No offset
+	}
+
 	// Filter by date range
 	if startDate := c.Query("start_date"); startDate != "" {
 		query = query.Where("transaction_date >= ?", startDate)
+		queryCount = queryCount.Where("transaction_date >= ?", startDate)
 	}
 
 	if endDate := c.Query("end_date"); endDate != "" {
 		query = query.Where("transaction_date <= ?", endDate+" 23:59:59")
+		queryCount = queryCount.Where("transaction_date <= ?", endDate+" 23:59:59")
 	}
 
 	// Filter by payment type
 	if paymentType := c.Query("payment_type"); paymentType != "" && paymentType != "all" {
 		query = query.Where("payment_type = ?", paymentType)
+		queryCount = queryCount.Where("payment_type = ?", paymentType)
 	}
 
 	// Filter by status
 	if status := c.Query("status"); status != "" {
 		query = query.Where("status = ?", status)
+		queryCount = queryCount.Where("status = ?", status)
 	}
 
 	// Filter by sales associate
 	if salesAssociateID := c.Query("sales_associate_id"); salesAssociateID != "" {
 		query = query.Where("sales_associate_id = ?", salesAssociateID)
+		queryCount = queryCount.Where("sales_associate_id = ?", salesAssociateID)
 	}
 
-	if err := query.Find(&transactions).Error; err != nil {
+	// Apply pagination and fetch data
+	if err := query.Offset(pagination.Offset).Limit(pagination.Limit).Find(&transactions).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch sales report",
 		})
@@ -188,10 +236,18 @@ func GetSalesReport(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(fiber.Map{
-		"data":    transactions,
-		"summary": summary,
-	})
+	// Create pagination response
+	response, err := helpers.CreatePaginationResponse(queryCount, transactions, "data", pagination.Page, pagination.Limit)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create pagination response",
+		})
+	}
+
+	// Add summary to response
+	response["summary"] = summary
+
+	return c.JSON(response)
 }
 
 // GetBooksStockReport godoc
@@ -201,6 +257,9 @@ func GetSalesReport(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 20)"
+// @Param all query bool false "Get all records without pagination"
 // @Param jenis_buku_id query string false "Filter by jenis buku ID"
 // @Param jenjang_studi_id query string false "Filter by jenjang studi ID"
 // @Param curriculum_id query string false "Filter by curriculum ID"
@@ -208,12 +267,15 @@ func GetSalesReport(c *fiber.Ctx) error {
 // @Param low_stock_threshold query int false "Low stock threshold (default: 10)"
 // @Param sort_by query string false "Sort by field (stock, name, created_at)"
 // @Param sort_order query string false "Sort order (asc, desc)"
-// @Success 200 {object} map[string]interface{} "Books stock report with summary"
+// @Success 200 {object} map[string]interface{} "Books stock report with summary and pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/reports/books-stock [get]
 func GetBooksStockReport(c *fiber.Ctx) error {
 	var books []models.Book
+
+	// Get pagination parameters
+	pagination := helpers.GetPaginationParams(c)
 
 	// Default sort by stock ascending (low stock first)
 	sortBy := c.Query("sort_by", "stock")
@@ -228,27 +290,40 @@ func GetBooksStockReport(c *fiber.Ctx) error {
 		Preload("Curriculum").
 		Preload("Publisher")
 
+	queryCount := config.DB.Model(&models.Book{})
+
+	// add params for not using pagination
+	if c.Query("all") == "true" {
+		pagination.Limit = -1 // No limit
+		pagination.Offset = 0 // No offset
+	}
+
 	// Filter by jenis buku
 	if jenisBukuID := c.Query("jenis_buku_id"); jenisBukuID != "" {
 		query = query.Where("jenis_buku_id = ?", jenisBukuID)
+		queryCount = queryCount.Where("jenis_buku_id = ?", jenisBukuID)
 	}
 
 	// Filter by jenjang studi
 	if jenjangStudiID := c.Query("jenjang_studi_id"); jenjangStudiID != "" {
 		query = query.Where("jenjang_studi_id = ?", jenjangStudiID)
+		queryCount = queryCount.Where("jenjang_studi_id = ?", jenjangStudiID)
 	}
 
 	// Filter by curriculum
 	if curriculumID := c.Query("curriculum_id"); curriculumID != "" {
 		query = query.Where("curriculum_id = ?", curriculumID)
+		queryCount = queryCount.Where("curriculum_id = ?", curriculumID)
 	}
 
 	// Filter by kelas
 	if kelas := c.Query("kelas"); kelas != "" {
 		query = query.Where("kelas = ?", kelas)
+		queryCount = queryCount.Where("kelas = ?", kelas)
 	}
 
-	if err := query.Find(&books).Error; err != nil {
+	// Apply pagination and fetch data
+	if err := query.Offset(pagination.Offset).Limit(pagination.Limit).Find(&books).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch books stock report",
 		})
@@ -271,11 +346,19 @@ func GetBooksStockReport(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(fiber.Map{
-		"data":                 books,
-		"summary":              summary,
-		"low_stock_threshold":  lowStockThreshold,
-	})
+	// Create pagination response
+	response, err := helpers.CreatePaginationResponse(queryCount, books, "data", pagination.Page, pagination.Limit)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to create pagination response",
+		})
+	}
+
+	// Add summary to response
+	response["summary"] = summary
+	response["low_stock_threshold"] = lowStockThreshold
+
+	return c.JSON(response)
 }
 
 // GetCreditsReport godoc
@@ -285,16 +368,22 @@ func GetBooksStockReport(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 20)"
+// @Param all query bool false "Get all records without pagination"
 // @Param start_date query string false "Start date (YYYY-MM-DD)"
 // @Param end_date query string false "End date (YYYY-MM-DD)"
 // @Param sales_associate_id query string false "Filter by sales associate ID"
 // @Param overdue_only query bool false "Show only overdue transactions"
-// @Success 200 {object} map[string]interface{} "Credits report with summary"
+// @Success 200 {object} map[string]interface{} "Credits report with summary and pagination"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/reports/credits [get]
 func GetCreditsReport(c *fiber.Ctx) error {
 	var transactions []models.SalesTransaction
+
+	// Get pagination parameters
+	pagination := helpers.GetPaginationParams(c)
 
 	// Only get credit transactions that are not fully paid
 	query := config.DB.Order("due_date ASC").
@@ -307,21 +396,35 @@ func GetCreditsReport(c *fiber.Ctx) error {
 		Preload("Items.Book").
 		Preload("Payments")
 
+	queryCount := config.DB.Model(&models.SalesTransaction{}).
+		Where("payment_type = ?", "K").
+		Where("status != ?", 1) // Not paid-off
+
+	// add params for not using pagination
+	if c.Query("all") == "true" {
+		pagination.Limit = -1 // No limit
+		pagination.Offset = 0 // No offset
+	}
+
 	// Filter by date range (transaction date)
 	if startDate := c.Query("start_date"); startDate != "" {
 		query = query.Where("transaction_date >= ?", startDate)
+		queryCount = queryCount.Where("transaction_date >= ?", startDate)
 	}
 
 	if endDate := c.Query("end_date"); endDate != "" {
 		query = query.Where("transaction_date <= ?", endDate+" 23:59:59")
+		queryCount = queryCount.Where("transaction_date <= ?", endDate+" 23:59:59")
 	}
 
 	// Filter by sales associate
 	if salesAssociateID := c.Query("sales_associate_id"); salesAssociateID != "" {
 		query = query.Where("sales_associate_id = ?", salesAssociateID)
+		queryCount = queryCount.Where("sales_associate_id = ?", salesAssociateID)
 	}
 
-	if err := query.Find(&transactions).Error; err != nil {
+	// Apply pagination and fetch data
+	if err := query.Offset(pagination.Offset).Limit(pagination.Limit).Find(&transactions).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch credits report",
 		})
@@ -374,8 +477,26 @@ func GetCreditsReport(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(fiber.Map{
-		"data":    reportItems,
-		"summary": summary,
-	})
+	// Create pagination response with the filtered report items
+	// Note: We need to count the filtered items, not use the queryCount
+	// because we filter out fully paid transactions in the loop
+	paginationMeta := helpers.PaginationMeta{
+		Page:       pagination.Page,
+		Limit:      pagination.Limit,
+		Total:      int64(len(reportItems)),
+		TotalPages: 0,
+	}
+
+	// Calculate total pages if pagination is enabled
+	if pagination.Limit > 0 {
+		paginationMeta.TotalPages = (len(reportItems) + pagination.Limit - 1) / pagination.Limit
+	}
+
+	response := fiber.Map{
+		"data":       reportItems,
+		"pagination": paginationMeta,
+		"summary":    summary,
+	}
+
+	return c.JSON(response)
 }

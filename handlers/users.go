@@ -43,6 +43,7 @@ func ValidateUserRequest(req *models.UserRequest) error {
 // @Security BearerAuth
 // @Param page query int false "Page number (default: 1)"
 // @Param limit query int false "Items per page (default: 20)"
+// @Param all query bool false "Get all records without pagination"
 // @Param search query string false "Search by email, full name"
 // @Success 200 {object} map[string]interface{} "List of users with pagination"
 // @Failure 403 {object} map[string]interface{} "Admin access required"
@@ -52,6 +53,12 @@ func GetAllUsers(c *fiber.Ctx) error {
 	pagination := helpers.GetPaginationParams(c)
 
 	query := config.DB.Model(&models.User{})
+
+	// add params for not using pagination
+	if c.Query("all") == "true" {
+		pagination.Limit = -1 // No limit
+		pagination.Offset = 0 // No offset
+	}
 
 	// Filter search
 	if searchQuery := c.Query("search"); searchQuery != "" {

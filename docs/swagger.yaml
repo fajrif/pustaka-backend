@@ -3085,8 +3085,16 @@ paths:
         in: query
         name: status
         type: integer
+      - description: 'Start date for date range filter (ISO format: YYYY-MM-DDTHH:mm:ss.sssZ)'
+        in: query
+        name: created_at_from
+        type: string
+      - description: 'End date for date range filter (ISO format: YYYY-MM-DDTHH:mm:ss.sssZ)'
+        in: query
+        name: created_at_to
+        type: string
       - description: 'Field to sort by: no_invoice, supplier_name, purchase_date,
-          total_amount, status'
+          total_amount, status, created_at'
         in: query
         name: sort_by
         type: string
@@ -3424,6 +3432,18 @@ paths:
       - application/json
       description: Get a report of all books with their current stock levels
       parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      - description: Get all records without pagination
+        in: query
+        name: all
+        type: boolean
       - description: Filter by jenis buku ID
         in: query
         name: jenis_buku_id
@@ -3456,7 +3476,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Books stock report with summary
+          description: Books stock report with summary and pagination
           schema:
             additionalProperties: true
             type: object
@@ -3482,6 +3502,18 @@ paths:
       description: Get a report of all outstanding credit transactions (remaining
         balances)
       parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      - description: Get all records without pagination
+        in: query
+        name: all
+        type: boolean
       - description: Start date (YYYY-MM-DD)
         in: query
         name: start_date
@@ -3502,7 +3534,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Credits report with summary
+          description: Credits report with summary and pagination
           schema:
             additionalProperties: true
             type: object
@@ -3527,6 +3559,18 @@ paths:
       - application/json
       description: Get a report of all purchases from suppliers with filters
       parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      - description: Get all records without pagination
+        in: query
+        name: all
+        type: boolean
       - description: Start date (YYYY-MM-DD)
         in: query
         name: start_date
@@ -3547,7 +3591,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Purchasing report with summary
+          description: Purchasing report with summary and pagination
           schema:
             additionalProperties: true
             type: object
@@ -3572,6 +3616,18 @@ paths:
       - application/json
       description: Get a report of all sales transactions with filters
       parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      - description: Get all records without pagination
+        in: query
+        name: all
+        type: boolean
       - description: Start date (YYYY-MM-DD)
         in: query
         name: start_date
@@ -3596,7 +3652,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Sales report with summary
+          description: Sales report with summary and pagination
           schema:
             additionalProperties: true
             type: object
@@ -4622,6 +4678,10 @@ paths:
         in: query
         name: limit
         type: integer
+      - description: Get all records without pagination
+        in: query
+        name: all
+        type: boolean
       - description: Search by email, full name
         in: query
         name: search

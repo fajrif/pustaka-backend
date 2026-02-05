@@ -3674,7 +3674,19 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Field to sort by: no_invoice, supplier_name, purchase_date, total_amount, status",
+                        "description": "Start date for date range filter (ISO format: YYYY-MM-DDTHH:mm:ss.sssZ)",
+                        "name": "created_at_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date for date range filter (ISO format: YYYY-MM-DDTHH:mm:ss.sssZ)",
+                        "name": "created_at_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field to sort by: no_invoice, supplier_name, purchase_date, total_amount, status, created_at",
                         "name": "sort_by",
                         "in": "query"
                     },
@@ -4175,6 +4187,24 @@ const docTemplate = `{
                 "summary": "Get books stock report",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Get all records without pagination",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "Filter by jenis buku ID",
                         "name": "jenis_buku_id",
@@ -4219,7 +4249,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Books stock report with summary",
+                        "description": "Books stock report with summary and pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -4262,6 +4292,24 @@ const docTemplate = `{
                 "summary": "Get credits (piutang) report",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Get all records without pagination",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "Start date (YYYY-MM-DD)",
                         "name": "start_date",
@@ -4288,7 +4336,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Credits report with summary",
+                        "description": "Credits report with summary and pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -4331,6 +4379,24 @@ const docTemplate = `{
                 "summary": "Get purchasing report",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Get all records without pagination",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "Start date (YYYY-MM-DD)",
                         "name": "start_date",
@@ -4357,7 +4423,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Purchasing report with summary",
+                        "description": "Purchasing report with summary and pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -4400,6 +4466,24 @@ const docTemplate = `{
                 "summary": "Get sales report",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Get all records without pagination",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "Start date (YYYY-MM-DD)",
                         "name": "start_date",
@@ -4432,7 +4516,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Sales report with summary",
+                        "description": "Sales report with summary and pagination",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -5965,6 +6049,12 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "Items per page (default: 20)",
                         "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Get all records without pagination",
+                        "name": "all",
                         "in": "query"
                     },
                     {
