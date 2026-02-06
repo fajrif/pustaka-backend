@@ -20,6 +20,7 @@ type PurchasingReportSummary struct {
 type SalesReportSummary struct {
 	TotalTransactions  int     `json:"total_transactions"`
 	TotalAmount        float64 `json:"total_amount"`
+	TotalItems         int     `json:"total_items"`
 	CashTransactions   int     `json:"cash_transactions"`
 	CashAmount         float64 `json:"cash_amount"`
 	CreditTransactions int     `json:"credit_transactions"`
@@ -37,8 +38,21 @@ type BooksStockSummary struct {
 type CreditReportSummary struct {
 	TotalOutstanding  float64 `json:"total_outstanding"`
 	TotalTransactions int     `json:"total_transactions"`
+	TotalItems        int     `json:"total_items"`
 	OverdueCount      int     `json:"overdue_count"`
 	OverdueAmount     float64 `json:"overdue_amount"`
+}
+
+// PurchasingReportData represents a single purchase transaction with computed fields
+type PurchasingReportData struct {
+	models.PurchaseTransaction
+	TotalItems int `json:"total_items"`
+}
+
+// SalesReportData represents a single sales transaction with computed fields
+type SalesReportData struct {
+	models.SalesTransaction
+	TotalItems int `json:"total_items"`
 }
 
 // CreditReportItem represents a single item in the credits report
@@ -47,6 +61,7 @@ type CreditReportItem struct {
 	TotalPaid       float64                 `json:"total_paid"`
 	RemainingAmount float64                 `json:"remaining_amount"`
 	IsOverdue       bool                    `json:"is_overdue"`
+	TotalItems      int                     `json:"total_items"`
 }
 
 // GetPurchasingReport godoc
@@ -117,19 +132,29 @@ func GetPurchasingReport(c *fiber.Ctx) error {
 		})
 	}
 
-	// Calculate summary
+	// Build report data with total_items for each transaction
+	var reportData []PurchasingReportData
 	var summary PurchasingReportSummary
 	summary.TotalTransactions = len(transactions)
 
 	for _, tx := range transactions {
 		summary.TotalAmount += tx.TotalAmount
-		for range tx.Items {
-			summary.TotalItems++
+
+		// Calculate total items for this transaction
+		totalItems := 0
+		for _, item := range tx.Items {
+			totalItems += item.Quantity
+			summary.TotalItems += item.Quantity
 		}
+
+		reportData = append(reportData, PurchasingReportData{
+			PurchaseTransaction: tx,
+			TotalItems:          totalItems,
+		})
 	}
 
 	// Create pagination response
-	response, err := helpers.CreatePaginationResponse(queryCount, transactions, "data", pagination.Page, pagination.Limit)
+	response, err := helpers.CreatePaginationResponse(queryCount, reportData, "data", pagination.Page, pagination.Limit)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create pagination response",
@@ -220,12 +245,25 @@ func GetSalesReport(c *fiber.Ctx) error {
 		})
 	}
 
-	// Calculate summary
+	// Build report data with total_items for each transaction
+	var reportData []SalesReportData
 	var summary SalesReportSummary
 	summary.TotalTransactions = len(transactions)
 
 	for _, tx := range transactions {
 		summary.TotalAmount += tx.TotalAmount
+
+		// Calculate total items for this transaction
+		totalItems := 0
+		for _, item := range tx.Items {
+			totalItems += item.Quantity
+			summary.TotalItems += item.Quantity
+		}
+
+		reportData = append(reportData, SalesReportData{
+			SalesTransaction: tx,
+			TotalItems:       totalItems,
+		})
 
 		if tx.PaymentType == "T" {
 			summary.CashTransactions++
@@ -237,7 +275,7 @@ func GetSalesReport(c *fiber.Ctx) error {
 	}
 
 	// Create pagination response
-	response, err := helpers.CreatePaginationResponse(queryCount, transactions, "data", pagination.Page, pagination.Limit)
+	response, err := helpers.CreatePaginationResponse(queryCount, reportData, "data", pagination.Page, pagination.Limit)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create pagination response",
@@ -459,11 +497,19 @@ func GetCreditsReport(c *fiber.Ctx) error {
 			continue
 		}
 
+		// Calculate total items for this transaction
+		totalItems := 0
+		for _, item := range tx.Items {
+			totalItems += item.Quantity
+			summary.TotalItems += item.Quantity
+		}
+
 		item := CreditReportItem{
 			Transaction:     tx,
 			TotalPaid:       totalPaid,
 			RemainingAmount: remainingAmount,
 			IsOverdue:       isOverdue,
+			TotalItems:      totalItems,
 		}
 		reportItems = append(reportItems, item)
 
