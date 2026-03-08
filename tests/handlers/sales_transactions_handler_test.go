@@ -56,6 +56,7 @@ func TestGetAllSalesTransactions(t *testing.T) {
 		transactionRows := sqlmock.NewRows([]string{
 			"id", "biller_id", "sales_associate_id", "no_invoice", "payment_type",
 			"transaction_date", "due_date", "total_amount", "status",
+			"periode", "year", "curriculum_id", "merk_buku_id", "jenjang_studi_id",
 			"created_at", "updated_at",
 		})
 
@@ -186,6 +187,8 @@ func TestCreateSalesTransaction(t *testing.T) {
 			SalesAssociateID: uuid.New().String(),
 			PaymentType:      "T",
 			TransactionDate:  time.Now(),
+			Periode:          1,
+			Year:             "2024",
 			Items:            []handlers.CreateTransactionItemRequest{},
 		}
 
@@ -217,6 +220,8 @@ func TestCreateSalesTransaction(t *testing.T) {
 			SalesAssociateID: uuid.New().String(),
 			PaymentType:      "X",
 			TransactionDate:  time.Now(),
+			Periode:          1,
+			Year:             "2024",
 			Items: []handlers.CreateTransactionItemRequest{
 				{
 					BookID:   uuid.New().String(),
@@ -313,10 +318,11 @@ func TestAddInstallment(t *testing.T) {
 		transactionRows := sqlmock.NewRows([]string{
 			"id", "biller_id", "sales_associate_id", "no_invoice", "payment_type",
 			"transaction_date", "due_date", "total_amount", "status",
+			"periode", "year", "curriculum_id", "merk_buku_id", "jenjang_studi_id",
 			"created_at", "updated_at",
 		}).
 			AddRow(transactionID, billerID, salesAssociateID, "INV2024010100000001", "T",
-				time.Now(), nil, 500000.00, 1, time.Now(), time.Now())
+				time.Now(), nil, 500000.00, 1, 1, "2024", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
 			WithArgs(transactionID.String()).
@@ -350,10 +356,11 @@ func TestAddInstallment(t *testing.T) {
 		transactionRows := sqlmock.NewRows([]string{
 			"id", "biller_id", "sales_associate_id", "no_invoice", "payment_type",
 			"transaction_date", "due_date", "total_amount", "status",
+			"periode", "year", "curriculum_id", "merk_buku_id", "jenjang_studi_id",
 			"created_at", "updated_at",
 		}).
 			AddRow(transactionID, billerID, salesAssociateID, "INV2024010100000001", "K",
-				time.Now(), time.Now().AddDate(0, 1, 0), 500000.00, 2, time.Now(), time.Now())
+				time.Now(), time.Now().AddDate(0, 1, 0), 500000.00, 2, 1, "2024", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
 			WithArgs(transactionID.String()).
@@ -409,10 +416,11 @@ func TestGetTransactionInstallments(t *testing.T) {
 		transactionRows := sqlmock.NewRows([]string{
 			"id", "biller_id", "sales_associate_id", "no_invoice", "payment_type",
 			"transaction_date", "due_date", "total_amount", "status",
+			"periode", "year", "curriculum_id", "merk_buku_id", "jenjang_studi_id",
 			"created_at", "updated_at",
 		}).
 			AddRow(transactionID, billerID, salesAssociateID, "INV2024010100000001", "K",
-				time.Now(), time.Now().AddDate(0, 1, 0), 500000.00, 2, time.Now(), time.Now())
+				time.Now(), time.Now().AddDate(0, 1, 0), 500000.00, 2, 1, "2024", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
 			WithArgs(transactionID.String()).

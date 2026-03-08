@@ -19,6 +19,11 @@ type CreateTransactionRequest struct {
 	PaymentType      string                         `json:"payment_type"` // 'T' or 'K'
 	TransactionDate  time.Time                      `json:"transaction_date"`
 	DueDate          *time.Time                     `json:"due_date"`
+	Periode          int                            `json:"periode"`
+	Year             string                         `json:"year"`
+	CurriculumID     *string                        `json:"curriculum_id"`
+	MerkBukuID       *string                        `json:"merk_buku_id"`
+	JenjangStudiID   *string                        `json:"jenjang_studi_id"`
 	Items            []CreateTransactionItemRequest `json:"items"`
 }
 
@@ -257,6 +262,9 @@ func GetAllSalesTransactions(c *fiber.Ctx) error {
 		Preload("Biller").
 		Preload("SalesAssociate").
 		Preload("SalesAssociate.City").
+		Preload("Curriculum").
+		Preload("MerkBuku").
+		Preload("JenjangStudi").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.MerkBuku").
@@ -300,6 +308,9 @@ func GetSalesTransaction(c *fiber.Ctx) error {
 		Preload("Biller").
 		Preload("SalesAssociate").
 		Preload("SalesAssociate.City").
+		Preload("Curriculum").
+		Preload("MerkBuku").
+		Preload("JenjangStudi").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.BidangStudi").
@@ -356,6 +367,16 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "sales_associate_id is required",
 		})
+	}
+
+	if req.Year == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "year is required",
+		})
+	}
+
+	if req.Periode <= 0 {
+		req.Periode = 1 // Default to 1 if not provided
 	}
 
 	if len(req.Items) == 0 {
@@ -495,6 +516,11 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		DueDate:          req.DueDate,
 		TotalAmount:      totalAmount,
 		Status:           0, // Default to booking
+		Periode:          req.Periode,
+		Year:             req.Year,
+		CurriculumID:     helpers.ParseUUIDPtr(req.CurriculumID),
+		MerkBukuID:       helpers.ParseUUIDPtr(req.MerkBukuID),
+		JenjangStudiID:   helpers.ParseUUIDPtr(req.JenjangStudiID),
 	}
 
 	// Save the transaction
@@ -528,6 +554,9 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 	config.DB.
 		Preload("Biller").
 		Preload("SalesAssociate").
+		Preload("Curriculum").
+		Preload("MerkBuku").
+		Preload("JenjangStudi").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.MerkBuku").
@@ -546,6 +575,11 @@ type UpdateTransactionRequest struct {
 	TransactionDate  *time.Time                     `json:"transaction_date"`
 	DueDate          *time.Time                     `json:"due_date"`
 	Status           *int                           `json:"status"`
+	Periode          *int                           `json:"periode"`
+	Year             *string                        `json:"year"`
+	CurriculumID     *string                        `json:"curriculum_id"`
+	MerkBukuID       *string                        `json:"merk_buku_id"`
+	JenjangStudiID   *string                        `json:"jenjang_studi_id"`
 	Items            []CreateTransactionItemRequest `json:"items,omitempty"`
 }
 
@@ -643,6 +677,26 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 
 	if req.Status != nil {
 		updates["status"] = *req.Status
+	}
+
+	if req.Periode != nil {
+		updates["periode"] = *req.Periode
+	}
+
+	if req.Year != nil {
+		updates["year"] = *req.Year
+	}
+
+	if req.CurriculumID != nil {
+		updates["curriculum_id"] = helpers.ParseUUIDPtr(req.CurriculumID)
+	}
+
+	if req.MerkBukuID != nil {
+		updates["merk_buku_id"] = helpers.ParseUUIDPtr(req.MerkBukuID)
+	}
+
+	if req.JenjangStudiID != nil {
+		updates["jenjang_studi_id"] = helpers.ParseUUIDPtr(req.JenjangStudiID)
 	}
 
 	// Handle items updates with stock management
@@ -849,6 +903,9 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 	config.DB.
 		Preload("Biller").
 		Preload("SalesAssociate").
+		Preload("Curriculum").
+		Preload("MerkBuku").
+		Preload("JenjangStudi").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.MerkBuku").

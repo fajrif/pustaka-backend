@@ -70,3 +70,15 @@ func ParseUUID(uuidStr string) uuid.UUID {
 	}
 	return parsedUUID
 }
+
+// ParseUUIDPtr parses a *string to *uuid.UUID, returning nil if input is nil or invalid
+func ParseUUIDPtr(uuidStr *string) *uuid.UUID {
+	if uuidStr == nil || *uuidStr == "" {
+		return nil
+	}
+	parsedUUID, err := uuid.Parse(*uuidStr)
+	if err != nil {
+		return nil
+	}
+	return &parsedUUID
+}

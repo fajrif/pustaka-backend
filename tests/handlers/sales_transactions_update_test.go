@@ -134,6 +134,8 @@ func TestUpdateSalesTransaction_Scenario1_CreateTransaction(t *testing.T) {
 			SalesAssociateID: salesAssociate.ID.String(),
 			PaymentType:      "T",
 			TransactionDate:  time.Now(),
+			Periode:          1,
+			Year:             "2024",
 			Items: []handlers.CreateTransactionItemRequest{
 				{
 					BookID:   book.ID.String(),
@@ -211,6 +213,8 @@ func TestUpdateSalesTransaction_Scenario2_UpdateItems(t *testing.T) {
 			SalesAssociateID: salesAssociate.ID.String(),
 			PaymentType:      "T",
 			TransactionDate:  time.Now(),
+			Periode:          1,
+			Year:             "2024",
 			Items: []handlers.CreateTransactionItemRequest{
 				{
 					BookID:   bookX.ID.String(),
@@ -377,6 +381,8 @@ func TestUpdateSalesTransaction_DuplicateBookIDValidation(t *testing.T) {
 		SalesAssociateID: salesAssociate.ID.String(),
 		PaymentType:      "T",
 		TransactionDate:  time.Now(),
+		Periode:          1,
+		Year:             "2024",
 		Items: []handlers.CreateTransactionItemRequest{
 			{
 				BookID:   book.ID.String(),
