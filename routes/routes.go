@@ -122,6 +122,11 @@ func Setup(app *fiber.App) {
     salesTransactions.Post("/:transaction_id/payments", handlers.CreatePayment)
     salesTransactions.Delete("/:transaction_id/payments/:id", handlers.DeletePayment)
 
+    // Installments routes (nested under sales-transactions)
+    salesTransactions.Get("/:transaction_id/installments", handlers.GetTransactionInstallments)
+    salesTransactions.Post("/:transaction_id/installments", handlers.AddInstallment)
+    salesTransactions.Delete("/:transaction_id/installments/:id", handlers.DeleteInstallment)
+
     // Shippings routes (nested under sales-transactions)
     salesTransactions.Get("/:transaction_id/shippings", handlers.GetTransactionShippings)
     salesTransactions.Post("/:transaction_id/shippings", handlers.CreateShipping)

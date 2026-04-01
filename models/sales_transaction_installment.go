@@ -11,7 +11,9 @@ type SalesTransactionInstallment struct {
 	NoInstallment   string    `gorm:"unique;not null" json:"no_installment"`
 	InstallmentDate time.Time `gorm:"not null" json:"installment_date"`
 	Amount          float64   `gorm:"not null" json:"amount"`
-	Note            *string   `json:"note"`
+	Note               *string   `json:"note"`
+	DiscountPercentage float64   `gorm:"not null;default:0" json:"discount_percentage"`
+	DiscountAmount     float64   `gorm:"not null;default:0" json:"discount_amount"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }

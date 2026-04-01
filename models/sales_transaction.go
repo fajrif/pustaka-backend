@@ -15,6 +15,7 @@ type SalesTransaction struct {
 	PaymentType      string                 `gorm:"default:'T';not null" json:"payment_type"` // 'T' for Cash, 'K' for Credit
 	TransactionDate  time.Time              `gorm:"not null" json:"transaction_date"`
 	DueDate          *time.Time             `json:"due_date"`
+	SecondaryDueDate *time.Time             `json:"secondary_due_date"`
 	TotalAmount      float64                `gorm:"not null;default:0" json:"total_amount"`
 	Status           int                    `gorm:"not null;default:0" json:"status"` // 0 = booking, 1 = paid-off, 2 = installment
 	Periode          int                    `gorm:"not null;default:1" json:"periode"`
@@ -25,6 +26,8 @@ type SalesTransaction struct {
 	MerkBuku         *MerkBuku              `gorm:"foreignKey:MerkBukuID" json:"merk_buku,omitempty"`
 	JenjangStudiID   *uuid.UUID             `gorm:"type:uuid" json:"jenjang_studi_id"`
 	JenjangStudi     *JenjangStudi          `gorm:"foreignKey:JenjangStudiID" json:"jenjang_studi,omitempty"`
+	JenisBukuID      *uuid.UUID             `gorm:"type:uuid" json:"jenis_buku_id"`
+	JenisBuku        *JenisBuku             `gorm:"foreignKey:JenisBukuID" json:"jenis_buku,omitempty"`
 	Items            []SalesTransactionItem `gorm:"foreignKey:TransactionID" json:"items,omitempty"`
 	Payments         []Payment              `gorm:"foreignKey:SalesTransactionID" json:"payments,omitempty"`
 	Shippings        []Shipping             `gorm:"foreignKey:SalesTransactionID" json:"shippings,omitempty"`

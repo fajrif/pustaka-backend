@@ -19,11 +19,13 @@ type CreateTransactionRequest struct {
 	PaymentType      string                         `json:"payment_type"` // 'T' or 'K'
 	TransactionDate  time.Time                      `json:"transaction_date"`
 	DueDate          *time.Time                     `json:"due_date"`
+	SecondaryDueDate *time.Time                     `json:"secondary_due_date"`
 	Periode          int                            `json:"periode"`
 	Year             string                         `json:"year"`
 	CurriculumID     *string                        `json:"curriculum_id"`
 	MerkBukuID       *string                        `json:"merk_buku_id"`
 	JenjangStudiID   *string                        `json:"jenjang_studi_id"`
+	JenisBukuID      *string                        `json:"jenis_buku_id"`
 	Items            []CreateTransactionItemRequest `json:"items"`
 }
 
@@ -265,6 +267,7 @@ func GetAllSalesTransactions(c *fiber.Ctx) error {
 		Preload("Curriculum").
 		Preload("MerkBuku").
 		Preload("JenjangStudi").
+		Preload("JenisBuku").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.MerkBuku").
@@ -311,6 +314,7 @@ func GetSalesTransaction(c *fiber.Ctx) error {
 		Preload("Curriculum").
 		Preload("MerkBuku").
 		Preload("JenjangStudi").
+		Preload("JenisBuku").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.BidangStudi").
@@ -397,6 +401,20 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "due_date is required for credit payment",
 		})
+	}
+
+	// Validate secondary_due_date
+	if req.SecondaryDueDate != nil {
+		if req.PaymentType == "T" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "secondary_due_date is only allowed for credit payments (payment_type = 'K')",
+			})
+		}
+		if req.DueDate != nil && !req.SecondaryDueDate.After(*req.DueDate) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "secondary_due_date must be after due_date",
+			})
+		}
 	}
 
 	// Validate discount is only allowed for cash payments
@@ -514,6 +532,7 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		PaymentType:      req.PaymentType,
 		TransactionDate:  req.TransactionDate,
 		DueDate:          req.DueDate,
+		SecondaryDueDate: req.SecondaryDueDate,
 		TotalAmount:      totalAmount,
 		Status:           0, // Default to booking
 		Periode:          req.Periode,
@@ -521,6 +540,7 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		CurriculumID:     helpers.ParseUUIDPtr(req.CurriculumID),
 		MerkBukuID:       helpers.ParseUUIDPtr(req.MerkBukuID),
 		JenjangStudiID:   helpers.ParseUUIDPtr(req.JenjangStudiID),
+		JenisBukuID:      helpers.ParseUUIDPtr(req.JenisBukuID),
 	}
 
 	// Save the transaction
@@ -557,6 +577,7 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		Preload("Curriculum").
 		Preload("MerkBuku").
 		Preload("JenjangStudi").
+		Preload("JenisBuku").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.MerkBuku").
@@ -574,12 +595,14 @@ type UpdateTransactionRequest struct {
 	PaymentType      *string                        `json:"payment_type"`
 	TransactionDate  *time.Time                     `json:"transaction_date"`
 	DueDate          *time.Time                     `json:"due_date"`
+	SecondaryDueDate *time.Time                     `json:"secondary_due_date"`
 	Status           *int                           `json:"status"`
 	Periode          *int                           `json:"periode"`
 	Year             *string                        `json:"year"`
 	CurriculumID     *string                        `json:"curriculum_id"`
 	MerkBukuID       *string                        `json:"merk_buku_id"`
 	JenjangStudiID   *string                        `json:"jenjang_studi_id"`
+	JenisBukuID      *string                        `json:"jenis_buku_id"`
 	Items            []CreateTransactionItemRequest `json:"items,omitempty"`
 }
 
@@ -675,6 +698,33 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 		updates["due_date"] = *req.DueDate
 	}
 
+	// Handle secondary_due_date
+	if req.SecondaryDueDate != nil {
+		// Determine effective payment type
+		effectivePaymentType := transaction.PaymentType
+		if req.PaymentType != nil {
+			effectivePaymentType = *req.PaymentType
+		}
+		if effectivePaymentType == "T" {
+			tx.Rollback()
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "secondary_due_date is only allowed for credit payments (payment_type = 'K')",
+			})
+		}
+		// Determine effective due_date for comparison
+		effectiveDueDate := transaction.DueDate
+		if req.DueDate != nil {
+			effectiveDueDate = req.DueDate
+		}
+		if effectiveDueDate != nil && !req.SecondaryDueDate.After(*effectiveDueDate) {
+			tx.Rollback()
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "secondary_due_date must be after due_date",
+			})
+		}
+		updates["secondary_due_date"] = *req.SecondaryDueDate
+	}
+
 	if req.Status != nil {
 		updates["status"] = *req.Status
 	}
@@ -697,6 +747,10 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 
 	if req.JenjangStudiID != nil {
 		updates["jenjang_studi_id"] = helpers.ParseUUIDPtr(req.JenjangStudiID)
+	}
+
+	if req.JenisBukuID != nil {
+		updates["jenis_buku_id"] = helpers.ParseUUIDPtr(req.JenisBukuID)
 	}
 
 	// Handle items updates with stock management
@@ -906,6 +960,7 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 		Preload("Curriculum").
 		Preload("MerkBuku").
 		Preload("JenjangStudi").
+		Preload("JenisBuku").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.MerkBuku").
@@ -1036,12 +1091,23 @@ func AddInstallment(c *fiber.Ctx) error {
 		})
 	}
 
+	// Calculate discount based on installment date vs due dates
+	var discountPercentage float64
+	if transaction.DueDate != nil && req.InstallmentDate.Before(*transaction.DueDate) {
+		discountPercentage = 8
+	} else if transaction.SecondaryDueDate != nil && req.InstallmentDate.Before(*transaction.SecondaryDueDate) {
+		discountPercentage = 5
+	}
+	discountAmount := req.Amount * discountPercentage / 100
+
 	installment := models.SalesTransactionInstallment{
-		TransactionID:   transaction.ID,
-		NoInstallment:   noInstallment,
-		InstallmentDate: req.InstallmentDate,
-		Amount:          req.Amount,
-		Note:            req.Note,
+		TransactionID:      transaction.ID,
+		NoInstallment:      noInstallment,
+		InstallmentDate:    req.InstallmentDate,
+		Amount:             req.Amount,
+		Note:               req.Note,
+		DiscountPercentage: discountPercentage,
+		DiscountAmount:     discountAmount,
 	}
 
 	if err := config.DB.Create(&installment).Error; err != nil {
@@ -1050,14 +1116,14 @@ func AddInstallment(c *fiber.Ctx) error {
 		})
 	}
 
-	// Check if total installments equal total amount, update status if paid off
-	var totalInstallments float64
+	// Check if total effective amount (amount + discount) >= total amount
+	var totalEffective float64
 	config.DB.Model(&models.SalesTransactionInstallment{}).
 		Where("transaction_id = ?", transaction.ID).
-		Select("COALESCE(SUM(amount), 0)").
-		Scan(&totalInstallments)
+		Select("COALESCE(SUM(amount + discount_amount), 0)").
+		Scan(&totalEffective)
 
-	if totalInstallments >= transaction.TotalAmount {
+	if totalEffective >= transaction.TotalAmount {
 		config.DB.Model(&transaction).Update("status", 1) // Paid-off
 	} else {
 		config.DB.Model(&transaction).Update("status", 2) // Installment
@@ -1100,18 +1166,25 @@ func GetTransactionInstallments(c *fiber.Ctx) error {
 		})
 	}
 
-	// Calculate total paid
+	// Calculate totals
 	var totalPaid float64
+	var totalDiscount float64
 	for _, inst := range installments {
 		totalPaid += inst.Amount
+		totalDiscount += inst.DiscountAmount
 	}
+	totalEffective := totalPaid + totalDiscount
 
 	return c.JSON(fiber.Map{
-		"transaction_id": transaction.ID,
-		"total_amount":   transaction.TotalAmount,
-		"total_paid":     totalPaid,
-		"remaining":      transaction.TotalAmount - totalPaid,
-		"installments":   installments,
+		"transaction_id":     transaction.ID,
+		"total_amount":       transaction.TotalAmount,
+		"total_paid":         totalPaid,
+		"total_discount":     totalDiscount,
+		"total_effective":    totalEffective,
+		"remaining":          transaction.TotalAmount - totalEffective,
+		"due_date":           transaction.DueDate,
+		"secondary_due_date": transaction.SecondaryDueDate,
+		"installments":       installments,
 	})
 }
 
@@ -1133,7 +1206,7 @@ func DeleteInstallment(c *fiber.Ctx) error {
 	transactionID := c.Params("transaction_id")
 
 	result := config.DB.
-		Where("id = ? AND sales_transaction_id = ?", id, transactionID).
+		Where("id = ? AND transaction_id = ?", id, transactionID).
 		Delete(&models.SalesTransactionInstallment{})
 	if result.Error != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -1145,6 +1218,24 @@ func DeleteInstallment(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Installment not found",
 		})
+	}
+
+	// Recalculate transaction status after deletion
+	var transaction models.SalesTransaction
+	if err := config.DB.Where("id = ?", transactionID).First(&transaction).Error; err == nil {
+		var totalEffective float64
+		config.DB.Model(&models.SalesTransactionInstallment{}).
+			Where("transaction_id = ?", transactionID).
+			Select("COALESCE(SUM(amount + discount_amount), 0)").
+			Scan(&totalEffective)
+
+		if totalEffective >= transaction.TotalAmount {
+			config.DB.Model(&transaction).Update("status", 1) // Paid-off
+		} else if totalEffective > 0 {
+			config.DB.Model(&transaction).Update("status", 2) // Installment
+		} else {
+			config.DB.Model(&transaction).Update("status", 0) // Booking
+		}
 	}
 
 	return c.JSON(fiber.Map{

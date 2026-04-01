@@ -6458,6 +6458,9 @@ const docTemplate = `{
         "handlers.CreateTransactionRequest": {
             "type": "object",
             "properties": {
+                "curriculum_id": {
+                    "type": "string"
+                },
                 "due_date": {
                     "type": "string"
                 },
@@ -6467,14 +6470,29 @@ const docTemplate = `{
                         "$ref": "#/definitions/handlers.CreateTransactionItemRequest"
                     }
                 },
+                "jenjang_studi_id": {
+                    "type": "string"
+                },
+                "merk_buku_id": {
+                    "type": "string"
+                },
                 "payment_type": {
                     "description": "'T' or 'K'",
                     "type": "string"
                 },
+                "periode": {
+                    "type": "integer"
+                },
                 "sales_associate_id": {
                     "type": "string"
                 },
+                "secondary_due_date": {
+                    "type": "string"
+                },
                 "transaction_date": {
+                    "type": "string"
+                },
+                "year": {
                     "type": "string"
                 }
             }
@@ -6542,6 +6560,9 @@ const docTemplate = `{
         "handlers.UpdateTransactionRequest": {
             "type": "object",
             "properties": {
+                "curriculum_id": {
+                    "type": "string"
+                },
                 "due_date": {
                     "type": "string"
                 },
@@ -6551,16 +6572,31 @@ const docTemplate = `{
                         "$ref": "#/definitions/handlers.CreateTransactionItemRequest"
                     }
                 },
+                "jenjang_studi_id": {
+                    "type": "string"
+                },
+                "merk_buku_id": {
+                    "type": "string"
+                },
                 "payment_type": {
                     "type": "string"
                 },
+                "periode": {
+                    "type": "integer"
+                },
                 "sales_associate_id": {
+                    "type": "string"
+                },
+                "secondary_due_date": {
                     "type": "string"
                 },
                 "status": {
                     "type": "integer"
                 },
                 "transaction_date": {
+                    "type": "string"
+                },
+                "year": {
                     "type": "string"
                 }
             }
@@ -7174,6 +7210,12 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "curriculum": {
+                    "$ref": "#/definitions/models.Curriculum"
+                },
+                "curriculum_id": {
+                    "type": "string"
+                },
                 "due_date": {
                     "type": "string"
                 },
@@ -7185,6 +7227,18 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.SalesTransactionItem"
                     }
+                },
+                "jenjang_studi": {
+                    "$ref": "#/definitions/models.JenjangStudi"
+                },
+                "jenjang_studi_id": {
+                    "type": "string"
+                },
+                "merk_buku": {
+                    "$ref": "#/definitions/models.MerkBuku"
+                },
+                "merk_buku_id": {
+                    "type": "string"
                 },
                 "no_invoice": {
                     "type": "string"
@@ -7199,10 +7253,16 @@ const docTemplate = `{
                         "$ref": "#/definitions/models.Payment"
                     }
                 },
+                "periode": {
+                    "type": "integer"
+                },
                 "sales_associate": {
                     "$ref": "#/definitions/models.SalesAssociate"
                 },
                 "sales_associate_id": {
+                    "type": "string"
+                },
+                "secondary_due_date": {
                     "type": "string"
                 },
                 "shippings": {
@@ -7223,6 +7283,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "year": {
+                    "type": "string"
                 }
             }
         },
@@ -7234,6 +7297,12 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "type": "string"
+                },
+                "discount_amount": {
+                    "type": "number"
+                },
+                "discount_percentage": {
+                    "type": "number"
                 },
                 "id": {
                     "type": "string"
