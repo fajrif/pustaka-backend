@@ -22,7 +22,7 @@ import (
 var salesTransactionColumns = []string{
 	"id", "biller_id", "sales_associate_id", "no_invoice", "payment_type",
 	"transaction_date", "due_date", "secondary_due_date", "total_amount", "status",
-	"periode", "year", "curriculum_id", "merk_buku_id", "jenjang_studi_id", "jenis_buku_id",
+	"periode", "year", "curriculum_id", "merk_buku_id", "jenjang_studi_id",
 	"created_at", "updated_at",
 }
 
@@ -408,7 +408,7 @@ func TestAddInstallment(t *testing.T) {
 		// Transaction with payment_type 'T' (cash)
 		transactionRows := sqlmock.NewRows(salesTransactionColumns).
 			AddRow(transactionID, billerID, salesAssociateID, "INV2024010100000001", "T",
-				time.Now(), nil, nil, 500000.00, 1, 1, "2024", nil, nil, nil, nil, time.Now(), time.Now())
+				time.Now(), nil, nil, 500000.00, 1, 1, "2024", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
 			WithArgs(transactionID.String()).
@@ -444,7 +444,7 @@ func TestAddInstallment(t *testing.T) {
 
 		transactionRows := sqlmock.NewRows(salesTransactionColumns).
 			AddRow(transactionID, billerID, salesAssociateID, "INV2024010100000001", "K",
-				time.Now(), dueDate, secondaryDueDate, 500000.00, 2, 1, "2024", nil, nil, nil, nil, time.Now(), time.Now())
+				time.Now(), dueDate, secondaryDueDate, 500000.00, 2, 1, "2024", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
 			WithArgs(transactionID.String()).
@@ -473,7 +473,7 @@ func TestAddInstallment(t *testing.T) {
 
 		transactionRows := sqlmock.NewRows(salesTransactionColumns).
 			AddRow(transactionID, billerID, salesAssociateID, "INV2024010100000001", "K",
-				time.Now(), dueDate, secondaryDueDate, 500000.00, 2, 1, "2024", nil, nil, nil, nil, time.Now(), time.Now())
+				time.Now(), dueDate, secondaryDueDate, 500000.00, 2, 1, "2024", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
 			WithArgs(transactionID.String()).
@@ -538,7 +538,7 @@ func TestGetTransactionInstallments(t *testing.T) {
 		// Verify transaction exists
 		transactionRows := sqlmock.NewRows(salesTransactionColumns).
 			AddRow(transactionID, billerID, salesAssociateID, "INV2024010100000001", "K",
-				time.Now(), dueDate, secondaryDueDate, 500000.00, 2, 1, "2024", nil, nil, nil, nil, time.Now(), time.Now())
+				time.Now(), dueDate, secondaryDueDate, 500000.00, 2, 1, "2024", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
 			WithArgs(transactionID.String()).
@@ -595,7 +595,7 @@ func TestDeleteSalesTransactionInstallment(t *testing.T) {
 		// After delete, handler recalculates status
 		transactionRows := sqlmock.NewRows(salesTransactionColumns).
 			AddRow(transactionID, billerID, salesAssociateID, "INV2024010100000001", "K",
-				time.Now(), time.Now().AddDate(0, 1, 0), time.Now().AddDate(0, 2, 0), 500000.00, 2, 1, "2024", nil, nil, nil, nil, time.Now(), time.Now())
+				time.Now(), time.Now().AddDate(0, 1, 0), time.Now().AddDate(0, 2, 0), 500000.00, 2, 1, "2024", nil, nil, nil, time.Now(), time.Now())
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
 			WithArgs(transactionID.String()).

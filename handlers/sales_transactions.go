@@ -25,7 +25,6 @@ type CreateTransactionRequest struct {
 	CurriculumID     *string                        `json:"curriculum_id"`
 	MerkBukuID       *string                        `json:"merk_buku_id"`
 	JenjangStudiID   *string                        `json:"jenjang_studi_id"`
-	JenisBukuID      *string                        `json:"jenis_buku_id"`
 	Items            []CreateTransactionItemRequest `json:"items"`
 }
 
@@ -267,7 +266,6 @@ func GetAllSalesTransactions(c *fiber.Ctx) error {
 		Preload("Curriculum").
 		Preload("MerkBuku").
 		Preload("JenjangStudi").
-		Preload("JenisBuku").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.MerkBuku").
@@ -540,7 +538,6 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		CurriculumID:     helpers.ParseUUIDPtr(req.CurriculumID),
 		MerkBukuID:       helpers.ParseUUIDPtr(req.MerkBukuID),
 		JenjangStudiID:   helpers.ParseUUIDPtr(req.JenjangStudiID),
-		JenisBukuID:      helpers.ParseUUIDPtr(req.JenisBukuID),
 	}
 
 	// Save the transaction
@@ -577,7 +574,6 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		Preload("Curriculum").
 		Preload("MerkBuku").
 		Preload("JenjangStudi").
-		Preload("JenisBuku").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.MerkBuku").
@@ -602,7 +598,6 @@ type UpdateTransactionRequest struct {
 	CurriculumID     *string                        `json:"curriculum_id"`
 	MerkBukuID       *string                        `json:"merk_buku_id"`
 	JenjangStudiID   *string                        `json:"jenjang_studi_id"`
-	JenisBukuID      *string                        `json:"jenis_buku_id"`
 	Items            []CreateTransactionItemRequest `json:"items,omitempty"`
 }
 
@@ -747,10 +742,6 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 
 	if req.JenjangStudiID != nil {
 		updates["jenjang_studi_id"] = helpers.ParseUUIDPtr(req.JenjangStudiID)
-	}
-
-	if req.JenisBukuID != nil {
-		updates["jenis_buku_id"] = helpers.ParseUUIDPtr(req.JenisBukuID)
 	}
 
 	// Handle items updates with stock management
@@ -960,7 +951,6 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 		Preload("Curriculum").
 		Preload("MerkBuku").
 		Preload("JenjangStudi").
-		Preload("JenisBuku").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.MerkBuku").
