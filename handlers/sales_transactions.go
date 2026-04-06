@@ -312,7 +312,6 @@ func GetSalesTransaction(c *fiber.Ctx) error {
 		Preload("Curriculum").
 		Preload("MerkBuku").
 		Preload("JenjangStudi").
-		Preload("JenisBuku").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.BidangStudi").
