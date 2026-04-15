@@ -4,6 +4,10 @@ definitions:
     properties:
       amount:
         type: number
+      discount_amount:
+        type: number
+      discount_percentage:
+        type: number
       installment_date:
         type: string
       note:
@@ -297,6 +301,21 @@ definitions:
   models.Date:
     properties:
       time.Time:
+        type: string
+    type: object
+  models.DiscountRate:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      discount:
+        type: number
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
         type: string
     type: object
   models.Expedition:
@@ -1822,6 +1841,240 @@ paths:
       summary: Update a curriculum
       tags:
       - Curriculum
+  /api/discount-rates:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all discount rates with pagination
+      parameters:
+      - description: Get all records without pagination
+        in: query
+        name: all
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of discount rates with pagination
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all discount rates
+      tags:
+      - DiscountRates
+    post:
+      consumes:
+      - application/json
+      description: Create a new discount rate entry
+      parameters:
+      - description: DiscountRate details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.DiscountRate'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created discount rate
+          schema:
+            $ref: '#/definitions/models.DiscountRate'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new discount rate
+      tags:
+      - DiscountRates
+  /api/discount-rates/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a discount rate by ID
+      parameters:
+      - description: DiscountRate ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: DiscountRate deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: DiscountRate not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a discount rate
+      tags:
+      - DiscountRates
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a single discount rate by its ID
+      parameters:
+      - description: DiscountRate ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: DiscountRate details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: DiscountRate not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a discount rate by ID
+      tags:
+      - DiscountRates
+    put:
+      consumes:
+      - application/json
+      description: Update an existing discount rate by ID
+      parameters:
+      - description: DiscountRate ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated discount rate details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.DiscountRate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated discount rate
+          schema:
+            $ref: '#/definitions/models.DiscountRate'
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: DiscountRate not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a discount rate
+      tags:
+      - DiscountRates
+  /api/discount-rates/applicable:
+    get:
+      consumes:
+      - application/json
+      description: Preview the discount percentage and name based on installment date
+        vs due dates
+      parameters:
+      - description: 'Installment date (ISO 8601: YYYY-MM-DD or RFC3339)'
+        in: query
+        name: installment_date
+        required: true
+        type: string
+      - description: 'Due date (ISO 8601: YYYY-MM-DD or RFC3339)'
+        in: query
+        name: due_date
+        type: string
+      - description: 'Secondary due date (ISO 8601: YYYY-MM-DD or RFC3339)'
+        in: query
+        name: secondary_due_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Applicable discount details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Preview applicable discount
+      tags:
+      - DiscountRates
   /api/expeditions:
     get:
       consumes:

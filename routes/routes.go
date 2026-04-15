@@ -1,180 +1,189 @@
 package routes
 
 import (
-    "pustaka-backend/handlers"
-    "pustaka-backend/middleware"
-    "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2"
+	"pustaka-backend/handlers"
+	"pustaka-backend/middleware"
 
-    fiberSwagger "github.com/swaggo/fiber-swagger"
+	fiberSwagger "github.com/swaggo/fiber-swagger"
 )
 
 func Setup(app *fiber.App) {
-    // Swagger documentation route
-    app.Get("/swagger/*", fiberSwagger.WrapHandler)
+	// Swagger documentation route
+	app.Get("/swagger/*", fiberSwagger.WrapHandler)
 
-    api := app.Group("/api")
+	api := app.Group("/api")
 
-    // Public routes
-    auth := api.Group("/auth")
-    auth.Post("/login", handlers.Login)
+	// Public routes
+	auth := api.Group("/auth")
+	auth.Post("/login", handlers.Login)
 
-    // Protected routes
-    api.Use(middleware.AuthRequired())
+	// Protected routes
+	api.Use(middleware.AuthRequired())
 
-    // User routes
-    api.Get("/me", handlers.GetMe)
-    api.Put("/me", handlers.UpdateMe)
+	// User routes
+	api.Get("/me", handlers.GetMe)
+	api.Put("/me", handlers.UpdateMe)
 
-    // Upload routes
-    api.Post("/upload/:resource/:field/:id", handlers.UploadResourceField)
-    api.Delete("/upload/:resource/:field/:id", handlers.DeleteResourceField)
+	// Upload routes
+	api.Post("/upload/:resource/:field/:id", handlers.UploadResourceField)
+	api.Delete("/upload/:resource/:field/:id", handlers.DeleteResourceField)
 
-    // Cities routes
-    cities := api.Group("/cities")
-    cities.Get("/", handlers.GetAllCities)
-    cities.Get("/:id", handlers.GetCity)
-    cities.Post("/", handlers.CreateCity)
-    cities.Put("/:id", handlers.UpdateCity)
-    cities.Delete("/:id", handlers.DeleteCity)
+	// Cities routes
+	cities := api.Group("/cities")
+	cities.Get("/", handlers.GetAllCities)
+	cities.Get("/:id", handlers.GetCity)
+	cities.Post("/", handlers.CreateCity)
+	cities.Put("/:id", handlers.UpdateCity)
+	cities.Delete("/:id", handlers.DeleteCity)
 
-    // Expeditions routes
-    expeditions := api.Group("/expeditions")
-    expeditions.Get("/", handlers.GetAllExpeditions)
-    expeditions.Get("/:id", handlers.GetExpedition)
-    expeditions.Post("/", handlers.CreateExpedition)
-    expeditions.Put("/:id", handlers.UpdateExpedition)
-    expeditions.Delete("/:id", handlers.DeleteExpedition)
+	// Expeditions routes
+	expeditions := api.Group("/expeditions")
+	expeditions.Get("/", handlers.GetAllExpeditions)
+	expeditions.Get("/:id", handlers.GetExpedition)
+	expeditions.Post("/", handlers.CreateExpedition)
+	expeditions.Put("/:id", handlers.UpdateExpedition)
+	expeditions.Delete("/:id", handlers.DeleteExpedition)
 
-    // MerkBuku routes
-    merkBuku := api.Group("/merk-buku")
-    merkBuku.Get("/", handlers.GetAllMerkBuku)
-    merkBuku.Get("/:id", handlers.GetMerkBuku)
-    merkBuku.Post("/", handlers.CreateMerkBuku)
-    merkBuku.Put("/:id", handlers.UpdateMerkBuku)
-    merkBuku.Delete("/:id", handlers.DeleteMerkBuku)
+	// MerkBuku routes
+	merkBuku := api.Group("/merk-buku")
+	merkBuku.Get("/", handlers.GetAllMerkBuku)
+	merkBuku.Get("/:id", handlers.GetMerkBuku)
+	merkBuku.Post("/", handlers.CreateMerkBuku)
+	merkBuku.Put("/:id", handlers.UpdateMerkBuku)
+	merkBuku.Delete("/:id", handlers.DeleteMerkBuku)
 
-    // JenisBuku routes
-    jenisBuku := api.Group("/jenis-buku")
-    jenisBuku.Get("/", handlers.GetAllJenisBuku)
-    jenisBuku.Get("/:id", handlers.GetJenisBuku)
-    jenisBuku.Post("/", handlers.CreateJenisBuku)
-    jenisBuku.Put("/:id", handlers.UpdateJenisBuku)
-    jenisBuku.Delete("/:id", handlers.DeleteJenisBuku)
+	// JenisBuku routes
+	jenisBuku := api.Group("/jenis-buku")
+	jenisBuku.Get("/", handlers.GetAllJenisBuku)
+	jenisBuku.Get("/:id", handlers.GetJenisBuku)
+	jenisBuku.Post("/", handlers.CreateJenisBuku)
+	jenisBuku.Put("/:id", handlers.UpdateJenisBuku)
+	jenisBuku.Delete("/:id", handlers.DeleteJenisBuku)
 
-    // JenjangStudi routes
-    jenjangStudi := api.Group("/jenjang-studi")
-    jenjangStudi.Get("/", handlers.GetAllJenjangStudi)
-    jenjangStudi.Get("/:id", handlers.GetJenjangStudi)
-    jenjangStudi.Post("/", handlers.CreateJenjangStudi)
-    jenjangStudi.Put("/:id", handlers.UpdateJenjangStudi)
-    jenjangStudi.Delete("/:id", handlers.DeleteJenjangStudi)
+	// JenjangStudi routes
+	jenjangStudi := api.Group("/jenjang-studi")
+	jenjangStudi.Get("/", handlers.GetAllJenjangStudi)
+	jenjangStudi.Get("/:id", handlers.GetJenjangStudi)
+	jenjangStudi.Post("/", handlers.CreateJenjangStudi)
+	jenjangStudi.Put("/:id", handlers.UpdateJenjangStudi)
+	jenjangStudi.Delete("/:id", handlers.DeleteJenjangStudi)
 
-    // BidangStudi routes
-    bidangStudi := api.Group("/bidang-studi")
-    bidangStudi.Get("/", handlers.GetAllBidangStudi)
-    bidangStudi.Get("/:id", handlers.GetBidangStudi)
-    bidangStudi.Post("/", handlers.CreateBidangStudi)
-    bidangStudi.Put("/:id", handlers.UpdateBidangStudi)
-    bidangStudi.Delete("/:id", handlers.DeleteBidangStudi)
+	// BidangStudi routes
+	bidangStudi := api.Group("/bidang-studi")
+	bidangStudi.Get("/", handlers.GetAllBidangStudi)
+	bidangStudi.Get("/:id", handlers.GetBidangStudi)
+	bidangStudi.Post("/", handlers.CreateBidangStudi)
+	bidangStudi.Put("/:id", handlers.UpdateBidangStudi)
+	bidangStudi.Delete("/:id", handlers.DeleteBidangStudi)
 
-    // Kelas routes
-    kelas := api.Group("/kelas")
-    kelas.Get("/", handlers.GetAllKelas)
-    kelas.Get("/:id", handlers.GetKelas)
-    kelas.Post("/", handlers.CreateKelas)
-    kelas.Put("/:id", handlers.UpdateKelas)
-    kelas.Delete("/:id", handlers.DeleteKelas)
+	// Kelas routes
+	kelas := api.Group("/kelas")
+	kelas.Get("/", handlers.GetAllKelas)
+	kelas.Get("/:id", handlers.GetKelas)
+	kelas.Post("/", handlers.CreateKelas)
+	kelas.Put("/:id", handlers.UpdateKelas)
+	kelas.Delete("/:id", handlers.DeleteKelas)
 
-    // Publishers routes
-    publishers := api.Group("/publishers")
-    publishers.Get("/", handlers.GetAllPublishers)
-    publishers.Get("/:id", handlers.GetPublisher)
-    publishers.Post("/", handlers.CreatePublisher)
-    publishers.Put("/:id", handlers.UpdatePublisher)
-    publishers.Delete("/:id", handlers.DeletePublisher)
+	// Publishers routes
+	publishers := api.Group("/publishers")
+	publishers.Get("/", handlers.GetAllPublishers)
+	publishers.Get("/:id", handlers.GetPublisher)
+	publishers.Post("/", handlers.CreatePublisher)
+	publishers.Put("/:id", handlers.UpdatePublisher)
+	publishers.Delete("/:id", handlers.DeletePublisher)
 
-    // Books routes
-    books := api.Group("/books")
-    books.Get("/", handlers.GetAllBooks)
-    books.Get("/:id", handlers.GetBook)
-    books.Post("/", handlers.CreateBook)
-    books.Put("/:id", handlers.UpdateBook)
-    books.Delete("/:id", handlers.DeleteBook)
+	// Books routes
+	books := api.Group("/books")
+	books.Get("/", handlers.GetAllBooks)
+	books.Get("/:id", handlers.GetBook)
+	books.Post("/", handlers.CreateBook)
+	books.Put("/:id", handlers.UpdateBook)
+	books.Delete("/:id", handlers.DeleteBook)
 
-    // SalesAssociates routes
-    salesAssociates := api.Group("/sales-associates")
-    salesAssociates.Get("/", handlers.GetAllSalesAssociates)
-    salesAssociates.Get("/:id", handlers.GetSalesAssociate)
-    salesAssociates.Post("/", handlers.CreateSalesAssociate)
-    salesAssociates.Put("/:id", handlers.UpdateSalesAssociate)
-    salesAssociates.Delete("/:id", handlers.DeleteSalesAssociate)
+	// SalesAssociates routes
+	salesAssociates := api.Group("/sales-associates")
+	salesAssociates.Get("/", handlers.GetAllSalesAssociates)
+	salesAssociates.Get("/:id", handlers.GetSalesAssociate)
+	salesAssociates.Post("/", handlers.CreateSalesAssociate)
+	salesAssociates.Put("/:id", handlers.UpdateSalesAssociate)
+	salesAssociates.Delete("/:id", handlers.DeleteSalesAssociate)
 
-    // SalesTransactions routes
-    salesTransactions := api.Group("/sales-transactions")
-    salesTransactions.Get("/", handlers.GetAllSalesTransactions)
-    salesTransactions.Get("/:id", handlers.GetSalesTransaction)
-    salesTransactions.Post("/", handlers.CreateSalesTransaction)
-    salesTransactions.Put("/:id", handlers.UpdateSalesTransaction)
-    salesTransactions.Delete("/:id", handlers.DeleteSalesTransaction)
+	// SalesTransactions routes
+	salesTransactions := api.Group("/sales-transactions")
+	salesTransactions.Get("/", handlers.GetAllSalesTransactions)
+	salesTransactions.Get("/:id", handlers.GetSalesTransaction)
+	salesTransactions.Post("/", handlers.CreateSalesTransaction)
+	salesTransactions.Put("/:id", handlers.UpdateSalesTransaction)
+	salesTransactions.Delete("/:id", handlers.DeleteSalesTransaction)
 
-    // Payments routes (nested under sales-transactions)
-    salesTransactions.Get("/:transaction_id/payments", handlers.GetTransactionPayments)
-    salesTransactions.Post("/:transaction_id/payments", handlers.CreatePayment)
-    salesTransactions.Delete("/:transaction_id/payments/:id", handlers.DeletePayment)
+	// Payments routes (nested under sales-transactions)
+	salesTransactions.Get("/:transaction_id/payments", handlers.GetTransactionPayments)
+	salesTransactions.Post("/:transaction_id/payments", handlers.CreatePayment)
+	salesTransactions.Delete("/:transaction_id/payments/:id", handlers.DeletePayment)
 
-    // Installments routes (nested under sales-transactions)
-    salesTransactions.Get("/:transaction_id/installments", handlers.GetTransactionInstallments)
-    salesTransactions.Post("/:transaction_id/installments", handlers.AddInstallment)
-    salesTransactions.Delete("/:transaction_id/installments/:id", handlers.DeleteInstallment)
+	// Installments routes (nested under sales-transactions)
+	salesTransactions.Get("/:transaction_id/installments", handlers.GetTransactionInstallments)
+	salesTransactions.Post("/:transaction_id/installments", handlers.AddInstallment)
+	salesTransactions.Delete("/:transaction_id/installments/:id", handlers.DeleteInstallment)
 
-    // Shippings routes (nested under sales-transactions)
-    salesTransactions.Get("/:transaction_id/shippings", handlers.GetTransactionShippings)
-    salesTransactions.Post("/:transaction_id/shippings", handlers.CreateShipping)
-    salesTransactions.Put("/:transaction_id/shippings/:id", handlers.UpdateShipping)
-    salesTransactions.Delete("/:transaction_id/shippings/:id", handlers.DeleteShipping)
+	// Shippings routes (nested under sales-transactions)
+	salesTransactions.Get("/:transaction_id/shippings", handlers.GetTransactionShippings)
+	salesTransactions.Post("/:transaction_id/shippings", handlers.CreateShipping)
+	salesTransactions.Put("/:transaction_id/shippings/:id", handlers.UpdateShipping)
+	salesTransactions.Delete("/:transaction_id/shippings/:id", handlers.DeleteShipping)
 
-    // Billers routes
-    billers := api.Group("/billers")
-    billers.Get("/", handlers.GetAllBillers)
-    billers.Get("/:id", handlers.GetBiller)
-    billers.Post("/", handlers.CreateBiller)
-    billers.Put("/:id", handlers.UpdateBiller)
-    billers.Delete("/:id", handlers.DeleteBiller)
+	// Billers routes
+	billers := api.Group("/billers")
+	billers.Get("/", handlers.GetAllBillers)
+	billers.Get("/:id", handlers.GetBiller)
+	billers.Post("/", handlers.CreateBiller)
+	billers.Put("/:id", handlers.UpdateBiller)
+	billers.Delete("/:id", handlers.DeleteBiller)
 
-    // Curriculum routes
-    curriculum := api.Group("/curriculums")
-    curriculum.Get("/", handlers.GetAllCurriculums)
-    curriculum.Get("/:id", handlers.GetCurriculum)
-    curriculum.Post("/", handlers.CreateCurriculum)
-    curriculum.Put("/:id", handlers.UpdateCurriculum)
-    curriculum.Delete("/:id", handlers.DeleteCurriculum)
+	// DiscountRates routes
+	discountRates := api.Group("/discount-rates")
+	discountRates.Get("/", handlers.GetAllDiscountRates)
+	discountRates.Get("/:id", handlers.GetDiscountRate)
+	discountRates.Post("/", handlers.CreateDiscountRate)
+	discountRates.Put("/:id", handlers.UpdateDiscountRate)
+	discountRates.Delete("/:id", handlers.DeleteDiscountRate)
+	discountRates.Get("/applicable", handlers.GetApplicableDiscount)
 
-    // PurchaseTransactions routes
-    purchaseTransactions := api.Group("/purchase-transactions")
-    purchaseTransactions.Get("/", handlers.GetAllPurchaseTransactions)
-    purchaseTransactions.Get("/:id", handlers.GetPurchaseTransaction)
-    purchaseTransactions.Post("/", handlers.CreatePurchaseTransaction)
-    purchaseTransactions.Put("/:id", handlers.UpdatePurchaseTransaction)
-    purchaseTransactions.Delete("/:id", handlers.DeletePurchaseTransaction)
-    purchaseTransactions.Post("/:id/complete", handlers.CompletePurchaseTransaction)
-    purchaseTransactions.Post("/:id/cancel", handlers.CancelPurchaseTransaction)
-    purchaseTransactions.Put("/:id/receipt", handlers.UploadPurchaseReceipt)
+	// Curriculum routes
+	curriculum := api.Group("/curriculums")
+	curriculum.Get("/", handlers.GetAllCurriculums)
+	curriculum.Get("/:id", handlers.GetCurriculum)
+	curriculum.Post("/", handlers.CreateCurriculum)
+	curriculum.Put("/:id", handlers.UpdateCurriculum)
+	curriculum.Delete("/:id", handlers.DeleteCurriculum)
 
-    // Reports routes
-    reports := api.Group("/reports")
-    reports.Get("/purchases", handlers.GetPurchasingReport)
-    reports.Get("/sales", handlers.GetSalesReport)
-    reports.Get("/books-stock", handlers.GetBooksStockReport)
-    reports.Get("/credits", handlers.GetCreditsReport)
+	// PurchaseTransactions routes
+	purchaseTransactions := api.Group("/purchase-transactions")
+	purchaseTransactions.Get("/", handlers.GetAllPurchaseTransactions)
+	purchaseTransactions.Get("/:id", handlers.GetPurchaseTransaction)
+	purchaseTransactions.Post("/", handlers.CreatePurchaseTransaction)
+	purchaseTransactions.Put("/:id", handlers.UpdatePurchaseTransaction)
+	purchaseTransactions.Delete("/:id", handlers.DeletePurchaseTransaction)
+	purchaseTransactions.Post("/:id/complete", handlers.CompletePurchaseTransaction)
+	purchaseTransactions.Post("/:id/cancel", handlers.CancelPurchaseTransaction)
+	purchaseTransactions.Put("/:id/receipt", handlers.UploadPurchaseReceipt)
 
-    // Admin Only routes
-    api.Use(middleware.AdminOnly())
+	// Reports routes
+	reports := api.Group("/reports")
+	reports.Get("/purchases", handlers.GetPurchasingReport)
+	reports.Get("/sales", handlers.GetSalesReport)
+	reports.Get("/books-stock", handlers.GetBooksStockReport)
+	reports.Get("/credits", handlers.GetCreditsReport)
 
-    // Users routes
-    users := api.Group("/users")
-    users.Get("/", handlers.GetAllUsers)
-    users.Get("/:id", handlers.GetUser)
-    users.Post("/", handlers.CreateUser)
-    users.Put("/:id", handlers.UpdateUser)
-    users.Delete("/:id", handlers.DeleteUser)
+	// Admin Only routes
+	api.Use(middleware.AdminOnly())
+
+	// Users routes
+	users := api.Group("/users")
+	users.Get("/", handlers.GetAllUsers)
+	users.Get("/:id", handlers.GetUser)
+	users.Post("/", handlers.CreateUser)
+	users.Put("/:id", handlers.UpdateUser)
+	users.Delete("/:id", handlers.DeleteUser)
 }

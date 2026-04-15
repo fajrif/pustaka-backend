@@ -1679,6 +1679,360 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/discount-rates": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve all discount rates with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DiscountRates"
+                ],
+                "summary": "Get all discount rates",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Get all records without pagination",
+                        "name": "all",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of discount rates with pagination",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new discount rate entry",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DiscountRates"
+                ],
+                "summary": "Create a new discount rate",
+                "parameters": [
+                    {
+                        "description": "DiscountRate details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.DiscountRate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created discount rate",
+                        "schema": {
+                            "$ref": "#/definitions/models.DiscountRate"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/discount-rates/applicable": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Preview the discount percentage and name based on installment date vs due dates",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DiscountRates"
+                ],
+                "summary": "Preview applicable discount",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Installment date (ISO 8601: YYYY-MM-DD or RFC3339)",
+                        "name": "installment_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Due date (ISO 8601: YYYY-MM-DD or RFC3339)",
+                        "name": "due_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Secondary due date (ISO 8601: YYYY-MM-DD or RFC3339)",
+                        "name": "secondary_due_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Applicable discount details",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/discount-rates/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve a single discount rate by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DiscountRates"
+                ],
+                "summary": "Get a discount rate by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "DiscountRate ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DiscountRate details",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "DiscountRate not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing discount rate by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DiscountRates"
+                ],
+                "summary": "Update a discount rate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "DiscountRate ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated discount rate details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.DiscountRate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated discount rate",
+                        "schema": {
+                            "$ref": "#/definitions/models.DiscountRate"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "DiscountRate not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a discount rate by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DiscountRates"
+                ],
+                "summary": "Delete a discount rate",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "DiscountRate ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DiscountRate deleted successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "DiscountRate not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/expeditions": {
             "get": {
                 "security": [
@@ -6366,6 +6720,12 @@ const docTemplate = `{
                 "amount": {
                     "type": "number"
                 },
+                "discount_amount": {
+                    "type": "number"
+                },
+                "discount_percentage": {
+                    "type": "number"
+                },
                 "installment_date": {
                     "type": "string"
                 },
@@ -6810,6 +7170,29 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "time.Time": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.DiscountRate": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "discount": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }

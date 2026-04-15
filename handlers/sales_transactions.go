@@ -53,9 +53,11 @@ func calculateItemSubtotal(price float64, quantity int, promotion float64, disco
 
 // CreateInstallmentRequest represents an installment payment
 type CreateInstallmentRequest struct {
-	InstallmentDate time.Time `json:"installment_date"`
-	Amount          float64   `json:"amount"`
-	Note            *string   `json:"note"`
+	InstallmentDate    time.Time `json:"installment_date"`
+	Amount             float64   `json:"amount"`
+	Note               *string   `json:"note"`
+	DiscountPercentage float64   `json:"discount_percentage"`
+	DiscountAmount     float64   `json:"discount_amount"`
 }
 
 // generateInvoiceNumber generates sequential invoice number: INV + YYYYMMDD + 8-digit sequence
@@ -1080,23 +1082,14 @@ func AddInstallment(c *fiber.Ctx) error {
 		})
 	}
 
-	// Calculate discount based on installment date vs due dates
-	var discountPercentage float64
-	if transaction.DueDate != nil && req.InstallmentDate.Before(*transaction.DueDate) {
-		discountPercentage = 8
-	} else if transaction.SecondaryDueDate != nil && req.InstallmentDate.Before(*transaction.SecondaryDueDate) {
-		discountPercentage = 5
-	}
-	discountAmount := req.Amount * discountPercentage / 100
-
 	installment := models.SalesTransactionInstallment{
 		TransactionID:      transaction.ID,
 		NoInstallment:      noInstallment,
 		InstallmentDate:    req.InstallmentDate,
 		Amount:             req.Amount,
 		Note:               req.Note,
-		DiscountPercentage: discountPercentage,
-		DiscountAmount:     discountAmount,
+		DiscountPercentage: req.DiscountPercentage,
+		DiscountAmount:     req.DiscountAmount,
 	}
 
 	if err := config.DB.Create(&installment).Error; err != nil {
