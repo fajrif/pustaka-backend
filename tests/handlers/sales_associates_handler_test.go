@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http/httptest"
 	"pustaka-backend/handlers"
-	"pustaka-backend/models"
 	"pustaka-backend/tests/testutil"
 	"regexp"
 	"testing"
@@ -223,17 +222,15 @@ func TestCreateSalesAssociate(t *testing.T) {
 		defer testutil.CloseMockDB(db)
 
 		cityID := uuid.New()
-		joinDate := time.Now()
 		discount := 10.5
-		jenisPembayaran := "T"
 
-		reqBody := models.SalesAssociate{
+		reqBody := handlers.CreateSalesAssociateRequest{
 			Name:            "PT Distributor A",
 			Address:         "Jl. Test",
-			CityID:          &cityID,
+			CityID:          testutil.StringPtr(cityID.String()),
 			Phone1:          "021-111",
-			JenisPembayaran: jenisPembayaran,
-			JoinDate:        joinDate,
+			JenisPembayaran: testutil.StringPtr("T"),
+			JoinDate:        testutil.StringPtr("2024-01-15"),
 			Discount:        discount,
 		}
 
@@ -279,7 +276,6 @@ func TestUpdateSalesAssociate(t *testing.T) {
 		cityID := uuid.New()
 		joinDate := time.Now()
 		discount := 10.5
-		jenisPembayaran := "T"
 
 		salesAssociateRows := sqlmock.NewRows([]string{"id", "code", "name", "description", "address", "city_id", "area", "phone1", "phone2", "email", "website", "jenis_pembayaran", "join_date", "end_join_date", "discount", "created_at", "updated_at"}).
 			AddRow(salesAssociateID, "SA001", "PT Distributor A", "Test Description", "Jl. Test", cityID, "Area 1", "021-111", nil, nil, nil, "T", joinDate, nil, discount, time.Now(), time.Now())
@@ -293,14 +289,18 @@ func TestUpdateSalesAssociate(t *testing.T) {
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectCommit()
 
-		reqBody := models.SalesAssociate{
-			ID:              salesAssociateID,
-			Name:            "PT Distributor A Updated",
-			Address:         "Jl. Test Updated",
-			Phone1:          "021-111",
-			JenisPembayaran: jenisPembayaran,
-			JoinDate:        joinDate,
-			Discount:        discount,
+		name := "PT Distributor A Updated"
+		address := "Jl. Test Updated"
+		phone1 := "021-111"
+		jenisPembayaran := "T"
+		joinDateStr := "2024-01-15"
+		reqBody := handlers.UpdateSalesAssociateRequest{
+			Name:            &name,
+			Address:         &address,
+			Phone1:          &phone1,
+			JenisPembayaran: &jenisPembayaran,
+			JoinDate:        &joinDateStr,
+			Discount:        &discount,
 		}
 
 		body, _ := json.Marshal(reqBody)
@@ -317,21 +317,24 @@ func TestUpdateSalesAssociate(t *testing.T) {
 		defer testutil.CloseMockDB(db)
 
 		salesAssociateID := uuid.New()
-		joinDate := time.Now()
 		discount := 10.5
-		jenisPembayaran := "T"
 
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_associates" WHERE id = $1`)).
 			WithArgs(salesAssociateID.String()).
 			WillReturnError(gorm.ErrRecordNotFound)
 
-		reqBody := models.SalesAssociate{
-			Name:            "PT Distributor A",
-			Address:         "Jl. Test",
-			Phone1:          "021-111",
-			JenisPembayaran: jenisPembayaran,
-			JoinDate:        joinDate,
-			Discount:        discount,
+		name := "PT Distributor A"
+		address := "Jl. Test"
+		phone1 := "021-111"
+		jenisPembayaran := "T"
+		joinDateStr := "2024-01-15"
+		reqBody := handlers.UpdateSalesAssociateRequest{
+			Name:            &name,
+			Address:         &address,
+			Phone1:          &phone1,
+			JenisPembayaran: &jenisPembayaran,
+			JoinDate:        &joinDateStr,
+			Discount:        &discount,
 		}
 
 		body, _ := json.Marshal(reqBody)

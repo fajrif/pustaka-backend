@@ -1,8 +1,8 @@
 package models
 
 import (
-	"time"
 	"github.com/google/uuid"
+	"time"
 )
 
 type SalesTransaction struct {
@@ -14,8 +14,6 @@ type SalesTransaction struct {
 	NoInvoice        string                 `gorm:"unique;not null" json:"no_invoice"`
 	PaymentType      string                 `gorm:"default:'T';not null" json:"payment_type"` // 'T' for Cash, 'K' for Credit
 	TransactionDate  time.Time              `gorm:"not null" json:"transaction_date"`
-	DueDate          *time.Time             `json:"due_date"`
-	SecondaryDueDate *time.Time             `json:"secondary_due_date"`
 	TotalAmount      float64                `gorm:"not null;default:0" json:"total_amount"`
 	Status           int                    `gorm:"not null;default:0" json:"status"` // 0 = booking, 1 = paid-off, 2 = installment
 	Periode          int                    `gorm:"not null;default:1" json:"periode"`

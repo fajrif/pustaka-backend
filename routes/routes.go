@@ -122,10 +122,8 @@ func Setup(app *fiber.App) {
 	salesTransactions.Post("/:transaction_id/payments", handlers.CreatePayment)
 	salesTransactions.Delete("/:transaction_id/payments/:id", handlers.DeletePayment)
 
-	// Installments routes (nested under sales-transactions)
-	salesTransactions.Get("/:transaction_id/installments", handlers.GetTransactionInstallments)
-	salesTransactions.Post("/:transaction_id/installments", handlers.AddInstallment)
-	salesTransactions.Delete("/:transaction_id/installments/:id", handlers.DeleteInstallment)
+	// Discount value preview (nested under sales-transactions)
+	salesTransactions.Get("/:sales_transaction_id/discount-value", handlers.GetSalesTransactionDiscountValue)
 
 	// Shippings routes (nested under sales-transactions)
 	salesTransactions.Get("/:transaction_id/shippings", handlers.GetTransactionShippings)
@@ -144,11 +142,11 @@ func Setup(app *fiber.App) {
 	// DiscountRates routes
 	discountRates := api.Group("/discount-rates")
 	discountRates.Get("/", handlers.GetAllDiscountRates)
+	discountRates.Get("/preview/:sales_transaction_id", handlers.GetSalesTransactionDiscountValue)
 	discountRates.Get("/:id", handlers.GetDiscountRate)
 	discountRates.Post("/", handlers.CreateDiscountRate)
 	discountRates.Put("/:id", handlers.UpdateDiscountRate)
 	discountRates.Delete("/:id", handlers.DeleteDiscountRate)
-	discountRates.Get("/applicable", handlers.GetApplicableDiscount)
 
 	// Curriculum routes
 	curriculum := api.Group("/curriculums")

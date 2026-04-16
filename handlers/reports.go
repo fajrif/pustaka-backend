@@ -4,7 +4,6 @@ import (
 	"pustaka-backend/config"
 	"pustaka-backend/helpers"
 	"pustaka-backend/models"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -39,8 +38,6 @@ type CreditReportSummary struct {
 	TotalOutstanding  float64 `json:"total_outstanding"`
 	TotalTransactions int     `json:"total_transactions"`
 	TotalItems        int     `json:"total_items"`
-	OverdueCount      int     `json:"overdue_count"`
-	OverdueAmount     float64 `json:"overdue_amount"`
 }
 
 // PurchasingReportData represents a single purchase transaction with computed fields
@@ -60,7 +57,6 @@ type CreditReportItem struct {
 	Transaction     models.SalesTransaction `json:"transaction"`
 	TotalPaid       float64                 `json:"total_paid"`
 	RemainingAmount float64                 `json:"remaining_amount"`
-	IsOverdue       bool                    `json:"is_overdue"`
 	TotalItems      int                     `json:"total_items"`
 }
 
@@ -424,7 +420,7 @@ func GetCreditsReport(c *fiber.Ctx) error {
 	pagination := helpers.GetPaginationParams(c)
 
 	// Only get credit transactions that are not fully paid
-	query := config.DB.Order("due_date ASC").
+	query := config.DB.Order("transaction_date ASC").
 		Where("payment_type = ?", "K").
 		Where("status != ?", 1). // Not paid-off
 		Preload("Biller").
@@ -471,8 +467,6 @@ func GetCreditsReport(c *fiber.Ctx) error {
 	// Calculate summary and build report items
 	var summary CreditReportSummary
 	var reportItems []CreditReportItem
-	now := time.Now()
-	overdueOnly := c.Query("overdue_only") == "true"
 
 	for _, tx := range transactions {
 		// Calculate total paid
@@ -486,17 +480,6 @@ func GetCreditsReport(c *fiber.Ctx) error {
 			continue // Skip fully paid
 		}
 
-		// Check if overdue
-		isOverdue := false
-		if tx.DueDate != nil && tx.DueDate.Before(now) {
-			isOverdue = true
-		}
-
-		// Filter by overdue only if requested
-		if overdueOnly && !isOverdue {
-			continue
-		}
-
 		// Calculate total items for this transaction
 		totalItems := 0
 		for _, item := range tx.Items {
@@ -508,7 +491,6 @@ func GetCreditsReport(c *fiber.Ctx) error {
 			Transaction:     tx,
 			TotalPaid:       totalPaid,
 			RemainingAmount: remainingAmount,
-			IsOverdue:       isOverdue,
 			TotalItems:      totalItems,
 		}
 		reportItems = append(reportItems, item)
@@ -516,11 +498,6 @@ func GetCreditsReport(c *fiber.Ctx) error {
 		// Update summary
 		summary.TotalTransactions++
 		summary.TotalOutstanding += remainingAmount
-
-		if isOverdue {
-			summary.OverdueCount++
-			summary.OverdueAmount += remainingAmount
-		}
 	}
 
 	// Create pagination response with the filtered report items

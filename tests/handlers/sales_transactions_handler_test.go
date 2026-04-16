@@ -10,7 +10,6 @@ import (
 	"pustaka-backend/tests/testutil"
 	"regexp"
 	"testing"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gofiber/fiber/v2"
@@ -21,14 +20,9 @@ import (
 
 var salesTransactionColumns = []string{
 	"id", "biller_id", "sales_associate_id", "no_invoice", "payment_type",
-	"transaction_date", "due_date", "secondary_due_date", "total_amount", "status",
+	"transaction_date", "total_amount", "status",
 	"periode", "year", "curriculum_id", "merk_buku_id", "jenjang_studi_id",
 	"created_at", "updated_at",
-}
-
-var installmentColumns = []string{
-	"id", "transaction_id", "no_installment", "installment_date", "amount",
-	"note", "discount_percentage", "discount_amount", "created_at", "updated_at",
 }
 
 func TestGetAllSalesTransactions(t *testing.T) {
@@ -128,7 +122,7 @@ func TestCreateSalesTransaction(t *testing.T) {
 		defaultBillerID := uuid.New()
 
 		defaultBillerRow := sqlmock.NewRows([]string{"id"}).
-		  AddRow(defaultBillerID)
+			AddRow(defaultBillerID)
 
 		mock.ExpectQuery(`SELECT "id" FROM "billers"`).
 			WillReturnRows(defaultBillerRow)
@@ -150,14 +144,14 @@ func TestCreateSalesTransaction(t *testing.T) {
 		defaultBillerID := uuid.New()
 
 		defaultBillerRow := sqlmock.NewRows([]string{"id"}).
-		  AddRow(defaultBillerID)
+			AddRow(defaultBillerID)
 
 		mock.ExpectQuery(`SELECT "id" FROM "billers"`).
 			WillReturnRows(defaultBillerRow)
 
 		requestBody := handlers.CreateTransactionRequest{
 			PaymentType:     "T",
-			TransactionDate: time.Now(),
+			TransactionDate: testutil.StringPtr("2024-01-15"),
 			Items: []handlers.CreateTransactionItemRequest{
 				{
 					BookID:   uuid.New().String(),
@@ -185,7 +179,7 @@ func TestCreateSalesTransaction(t *testing.T) {
 		defaultBillerID := uuid.New()
 
 		defaultBillerRow := sqlmock.NewRows([]string{"id"}).
-		  AddRow(defaultBillerID)
+			AddRow(defaultBillerID)
 
 		mock.ExpectQuery(`SELECT "id" FROM "billers"`).
 			WillReturnRows(defaultBillerRow)
@@ -193,7 +187,7 @@ func TestCreateSalesTransaction(t *testing.T) {
 		requestBody := handlers.CreateTransactionRequest{
 			SalesAssociateID: uuid.New().String(),
 			PaymentType:      "T",
-			TransactionDate:  time.Now(),
+			TransactionDate:  testutil.StringPtr("2024-01-15"),
 			Periode:          1,
 			Year:             "2024",
 			Items:            []handlers.CreateTransactionItemRequest{},
@@ -218,7 +212,7 @@ func TestCreateSalesTransaction(t *testing.T) {
 		defaultBillerID := uuid.New()
 
 		defaultBillerRow := sqlmock.NewRows([]string{"id"}).
-		  AddRow(defaultBillerID)
+			AddRow(defaultBillerID)
 
 		mock.ExpectQuery(`SELECT "id" FROM "billers"`).
 			WillReturnRows(defaultBillerRow)
@@ -226,7 +220,7 @@ func TestCreateSalesTransaction(t *testing.T) {
 		requestBody := handlers.CreateTransactionRequest{
 			SalesAssociateID: uuid.New().String(),
 			PaymentType:      "X",
-			TransactionDate:  time.Now(),
+			TransactionDate:  testutil.StringPtr("2024-01-15"),
 			Periode:          1,
 			Year:             "2024",
 			Items: []handlers.CreateTransactionItemRequest{
@@ -250,90 +244,6 @@ func TestCreateSalesTransaction(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.Equal(t, "payment_type must be either 'T' (cash) or 'K' (credit)", response["error"])
-	})
-
-	t.Run("Secondary due date before due date", func(t *testing.T) {
-		defaultBillerID := uuid.New()
-
-		defaultBillerRow := sqlmock.NewRows([]string{"id"}).
-			AddRow(defaultBillerID)
-
-		mock.ExpectQuery(`SELECT "id" FROM "billers"`).
-			WillReturnRows(defaultBillerRow)
-
-		dueDate := time.Now().AddDate(0, 1, 0)
-		secondaryDueDate := time.Now() // before due_date
-
-		requestBody := handlers.CreateTransactionRequest{
-			SalesAssociateID: uuid.New().String(),
-			PaymentType:      "K",
-			TransactionDate:  time.Now(),
-			DueDate:          &dueDate,
-			SecondaryDueDate: &secondaryDueDate,
-			Periode:          1,
-			Year:             "2024",
-			Items: []handlers.CreateTransactionItemRequest{
-				{
-					BookID:   uuid.New().String(),
-					Quantity: 10,
-				},
-			},
-		}
-
-		bodyBytes, _ := json.Marshal(requestBody)
-
-		req := httptest.NewRequest("POST", "/sales-transactions", bytes.NewReader(bodyBytes))
-		req.Header.Set("Content-Type", "application/json")
-		resp, _ := app.Test(req)
-
-		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "secondary_due_date must be after due_date", response["error"])
-	})
-
-	t.Run("Secondary due date on cash payment", func(t *testing.T) {
-		defaultBillerID := uuid.New()
-
-		defaultBillerRow := sqlmock.NewRows([]string{"id"}).
-			AddRow(defaultBillerID)
-
-		mock.ExpectQuery(`SELECT "id" FROM "billers"`).
-			WillReturnRows(defaultBillerRow)
-
-		secondaryDueDate := time.Now().AddDate(0, 2, 0)
-
-		requestBody := handlers.CreateTransactionRequest{
-			SalesAssociateID: uuid.New().String(),
-			PaymentType:      "T",
-			TransactionDate:  time.Now(),
-			SecondaryDueDate: &secondaryDueDate,
-			Periode:          1,
-			Year:             "2024",
-			Items: []handlers.CreateTransactionItemRequest{
-				{
-					BookID:   uuid.New().String(),
-					Quantity: 10,
-				},
-			},
-		}
-
-		bodyBytes, _ := json.Marshal(requestBody)
-
-		req := httptest.NewRequest("POST", "/sales-transactions", bytes.NewReader(bodyBytes))
-		req.Header.Set("Content-Type", "application/json")
-		resp, _ := app.Test(req)
-
-		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "secondary_due_date is only allowed for credit payments (payment_type = 'K')", response["error"])
 	})
 }
 
@@ -362,309 +272,5 @@ func TestDeleteSalesTransaction(t *testing.T) {
 		json.Unmarshal(respBody, &response)
 
 		assert.Equal(t, "Transaction not found", response["error"])
-	})
-}
-
-func TestAddInstallment(t *testing.T) {
-	db, mock, err := testutil.SetupMockDB()
-	assert.NoError(t, err)
-	defer testutil.CloseMockDB(db)
-
-	app := fiber.New()
-	app.Post("/sales-transactions/:transaction_id/installments", handlers.AddInstallment)
-
-	t.Run("Transaction not found", func(t *testing.T) {
-		transactionID := uuid.New()
-
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
-			WithArgs(transactionID.String()).
-			WillReturnError(gorm.ErrRecordNotFound)
-
-		requestBody := handlers.CreateInstallmentRequest{
-			InstallmentDate: time.Now(),
-			Amount:          250000.0,
-		}
-
-		bodyBytes, _ := json.Marshal(requestBody)
-
-		req := httptest.NewRequest("POST", fmt.Sprintf("/sales-transactions/%s/installments", transactionID.String()), bytes.NewReader(bodyBytes))
-		req.Header.Set("Content-Type", "application/json")
-		resp, _ := app.Test(req)
-
-		assert.Equal(t, fiber.StatusNotFound, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "Transaction not found", response["error"])
-	})
-
-	t.Run("Cannot add installment to cash transaction", func(t *testing.T) {
-		transactionID := uuid.New()
-		salesAssociateID := uuid.New()
-		billerID := uuid.New()
-
-		// Transaction with payment_type 'T' (cash)
-		transactionRows := sqlmock.NewRows(salesTransactionColumns).
-			AddRow(transactionID, billerID, salesAssociateID, "INV2024010100000001", "T",
-				time.Now(), nil, nil, 500000.00, 1, 1, "2024", nil, nil, nil, time.Now(), time.Now())
-
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
-			WithArgs(transactionID.String()).
-			WillReturnRows(transactionRows)
-
-		requestBody := handlers.CreateInstallmentRequest{
-			InstallmentDate: time.Now(),
-			Amount:          250000.0,
-		}
-
-		bodyBytes, _ := json.Marshal(requestBody)
-
-		req := httptest.NewRequest("POST", fmt.Sprintf("/sales-transactions/%s/installments", transactionID.String()), bytes.NewReader(bodyBytes))
-		req.Header.Set("Content-Type", "application/json")
-		resp, _ := app.Test(req)
-
-		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "Installments can only be added to credit transactions", response["error"])
-	})
-
-	t.Run("Invalid request body", func(t *testing.T) {
-		transactionID := uuid.New()
-		salesAssociateID := uuid.New()
-		billerID := uuid.New()
-
-		dueDate := time.Now().AddDate(0, 1, 0)
-		secondaryDueDate := time.Now().AddDate(0, 2, 0)
-
-		transactionRows := sqlmock.NewRows(salesTransactionColumns).
-			AddRow(transactionID, billerID, salesAssociateID, "INV2024010100000001", "K",
-				time.Now(), dueDate, secondaryDueDate, 500000.00, 2, 1, "2024", nil, nil, nil, time.Now(), time.Now())
-
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
-			WithArgs(transactionID.String()).
-			WillReturnRows(transactionRows)
-
-		req := httptest.NewRequest("POST", fmt.Sprintf("/sales-transactions/%s/installments", transactionID.String()), bytes.NewReader([]byte("invalid json")))
-		req.Header.Set("Content-Type", "application/json")
-		resp, _ := app.Test(req)
-
-		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "Invalid request body", response["error"])
-	})
-
-	t.Run("Invalid amount", func(t *testing.T) {
-		transactionID := uuid.New()
-		salesAssociateID := uuid.New()
-		billerID := uuid.New()
-
-		dueDate := time.Now().AddDate(0, 1, 0)
-		secondaryDueDate := time.Now().AddDate(0, 2, 0)
-
-		transactionRows := sqlmock.NewRows(salesTransactionColumns).
-			AddRow(transactionID, billerID, salesAssociateID, "INV2024010100000001", "K",
-				time.Now(), dueDate, secondaryDueDate, 500000.00, 2, 1, "2024", nil, nil, nil, time.Now(), time.Now())
-
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
-			WithArgs(transactionID.String()).
-			WillReturnRows(transactionRows)
-
-		requestBody := handlers.CreateInstallmentRequest{
-			InstallmentDate: time.Now(),
-			Amount:          0,
-		}
-
-		bodyBytes, _ := json.Marshal(requestBody)
-
-		req := httptest.NewRequest("POST", fmt.Sprintf("/sales-transactions/%s/installments", transactionID.String()), bytes.NewReader(bodyBytes))
-		req.Header.Set("Content-Type", "application/json")
-		resp, _ := app.Test(req)
-
-		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "Amount must be greater than 0", response["error"])
-	})
-}
-
-func TestGetTransactionInstallments(t *testing.T) {
-	db, mock, err := testutil.SetupMockDB()
-	assert.NoError(t, err)
-	defer testutil.CloseMockDB(db)
-
-	app := fiber.New()
-	app.Get("/sales-transactions/:transaction_id/installments", handlers.GetTransactionInstallments)
-
-	t.Run("Transaction not found", func(t *testing.T) {
-		transactionID := uuid.New()
-
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
-			WithArgs(transactionID.String()).
-			WillReturnError(gorm.ErrRecordNotFound)
-
-		req := httptest.NewRequest("GET", fmt.Sprintf("/sales-transactions/%s/installments", transactionID.String()), nil)
-		resp, _ := app.Test(req)
-
-		assert.Equal(t, fiber.StatusNotFound, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "Transaction not found", response["error"])
-	})
-
-	t.Run("Successfully get installments", func(t *testing.T) {
-		transactionID := uuid.New()
-		salesAssociateID := uuid.New()
-		billerID := uuid.New()
-
-		dueDate := time.Now().AddDate(0, 1, 0)
-		secondaryDueDate := time.Now().AddDate(0, 2, 0)
-
-		// Verify transaction exists
-		transactionRows := sqlmock.NewRows(salesTransactionColumns).
-			AddRow(transactionID, billerID, salesAssociateID, "INV2024010100000001", "K",
-				time.Now(), dueDate, secondaryDueDate, 500000.00, 2, 1, "2024", nil, nil, nil, time.Now(), time.Now())
-
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
-			WithArgs(transactionID.String()).
-			WillReturnRows(transactionRows)
-
-		// Fetch installments with discount columns
-		installmentID := uuid.New()
-		installmentRows := sqlmock.NewRows(installmentColumns).
-			AddRow(installmentID, transactionID, "PKR2024010100000001", time.Now(), 250000.0, nil, 8.0, 20000.0, time.Now(), time.Now())
-
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transaction_installments" WHERE transaction_id = $1 ORDER BY installment_date ASC`)).
-			WithArgs(transactionID.String()).
-			WillReturnRows(installmentRows)
-
-		req := httptest.NewRequest("GET", fmt.Sprintf("/sales-transactions/%s/installments", transactionID.String()), nil)
-		resp, _ := app.Test(req)
-
-		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.NotNil(t, response["transaction_id"])
-		assert.NotNil(t, response["total_amount"])
-		assert.NotNil(t, response["total_paid"])
-		assert.NotNil(t, response["total_discount"])
-		assert.NotNil(t, response["total_effective"])
-		assert.NotNil(t, response["remaining"])
-		assert.NotNil(t, response["installments"])
-	})
-}
-
-func TestDeleteSalesTransactionInstallment(t *testing.T) {
-	db, mock, err := testutil.SetupMockDB()
-	assert.NoError(t, err)
-	defer testutil.CloseMockDB(db)
-
-	app := fiber.New()
-	app.Delete("/sales-transactions/:transaction_id/installments/:id", handlers.DeleteInstallment)
-
-	t.Run("Successfully delete installment", func(t *testing.T) {
-		transactionID := uuid.New()
-		installmentID := uuid.New()
-		salesAssociateID := uuid.New()
-		billerID := uuid.New()
-
-		mock.ExpectBegin()
-		mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "sales_transaction_installments" WHERE id = $1 AND transaction_id = $2`)).
-			WithArgs(installmentID.String(), transactionID.String()).
-			WillReturnResult(sqlmock.NewResult(0, 1))
-		mock.ExpectCommit()
-
-		// After delete, handler recalculates status
-		transactionRows := sqlmock.NewRows(salesTransactionColumns).
-			AddRow(transactionID, billerID, salesAssociateID, "INV2024010100000001", "K",
-				time.Now(), time.Now().AddDate(0, 1, 0), time.Now().AddDate(0, 2, 0), 500000.00, 2, 1, "2024", nil, nil, nil, time.Now(), time.Now())
-
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sales_transactions" WHERE id = $1`)).
-			WithArgs(transactionID.String()).
-			WillReturnRows(transactionRows)
-
-		sumRows := sqlmock.NewRows([]string{"coalesce"}).AddRow(0)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT COALESCE(SUM(amount + discount_amount), 0) FROM "sales_transaction_installments" WHERE transaction_id = $1`)).
-			WithArgs(transactionID.String()).
-			WillReturnRows(sumRows)
-
-		mock.ExpectBegin()
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE "sales_transactions" SET "status"=$1,"updated_at"=$2 WHERE "id" = $3`)).
-			WithArgs(0, sqlmock.AnyArg(), transactionID.String()).
-			WillReturnResult(sqlmock.NewResult(0, 1))
-		mock.ExpectCommit()
-
-		req := httptest.NewRequest("DELETE", fmt.Sprintf("/sales-transactions/%s/installments/%s", transactionID.String(), installmentID.String()), nil)
-		resp, _ := app.Test(req)
-
-		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "Installment deleted successfully", response["message"])
-	})
-
-	t.Run("Installment not found", func(t *testing.T) {
-		transactionID := uuid.New()
-		installmentID := uuid.New()
-
-		mock.ExpectBegin()
-		mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "sales_transaction_installments" WHERE id = $1 AND transaction_id = $2`)).
-			WithArgs(installmentID.String(), transactionID.String()).
-			WillReturnResult(sqlmock.NewResult(0, 0))
-		mock.ExpectCommit()
-
-		req := httptest.NewRequest("DELETE", fmt.Sprintf("/sales-transactions/%s/installments/%s", transactionID.String(), installmentID.String()), nil)
-		resp, _ := app.Test(req)
-
-		assert.Equal(t, fiber.StatusNotFound, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "Installment not found", response["error"])
-	})
-
-	t.Run("Database error", func(t *testing.T) {
-		transactionID := uuid.New()
-		installmentID := uuid.New()
-
-		mock.ExpectBegin()
-		mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "sales_transaction_installments" WHERE id = $1 AND transaction_id = $2`)).
-			WithArgs(installmentID.String(), transactionID.String()).
-			WillReturnError(gorm.ErrInvalidDB)
-		mock.ExpectRollback()
-
-		req := httptest.NewRequest("DELETE", fmt.Sprintf("/sales-transactions/%s/installments/%s", transactionID.String(), installmentID.String()), nil)
-		resp, _ := app.Test(req)
-
-		assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "Failed to delete installment", response["error"])
 	})
 }

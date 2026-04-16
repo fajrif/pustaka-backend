@@ -2,8 +2,28 @@
 package helpers
 
 import (
+	"fmt"
 	"time"
 )
+
+const DateFormat = "2006-01-02"
+
+func ParseDateString(dateStr *string) (*time.Time, error) {
+	if dateStr == nil || *dateStr == "" {
+		return nil, nil
+	}
+
+	parsed, err := time.Parse(DateFormat, *dateStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid date format, expected YYYY-MM-DD")
+	}
+	return &parsed, nil
+}
+
+func MustParseDateString(dateStr *string) *time.Time {
+	parsed, _ := ParseDateString(dateStr)
+	return parsed
+}
 
 // CalculateDurationInMonths menghitung durasi antara start dan end date dalam bulan.
 func CalculateDurationInMonths(start, end time.Time) int {
@@ -27,7 +47,7 @@ func CalculateDurationInMonths(start, end time.Time) int {
 
 	// Sesuaikan jika tanggal selesai sebelum tanggal mulai di bulan yang sama (kasus edge)
 	if end.Day() < start.Day() && totalMonths > 0 {
-			totalMonths--
+		totalMonths--
 	}
 
 	return totalMonths

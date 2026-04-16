@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"pustaka-backend/config"
 	"pustaka-backend/helpers"
 	"pustaka-backend/models"
@@ -8,6 +9,29 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 )
+
+type CreateDiscountRateRequest struct {
+	Name        string  `json:"name"`
+	Discount    float64 `json:"discount"`
+	Periode     int     `json:"periode"`
+	Year        any     `json:"year"`
+	StartDate   *string `json:"start_date"`
+	EndDate     *string `json:"end_date"`
+	Description *string `json:"description"`
+}
+
+func parseYearValue(year any) (string, error) {
+	switch v := year.(type) {
+	case string:
+		return v, nil
+	case float64:
+		return fmt.Sprintf("%.0f", v), nil
+	case int:
+		return fmt.Sprintf("%d", v), nil
+	default:
+		return "", fmt.Errorf("year must be a string or number")
+	}
+}
 
 // GetAllDiscountRates godoc
 // @Summary Get all discount rates
@@ -26,12 +50,21 @@ func GetAllDiscountRates(c *fiber.Ctx) error {
 
 	pagination := helpers.GetPaginationParams(c)
 
-	query := config.DB.Model(&models.DiscountRate{}).Order("created_at ASC")
+	query := config.DB.Order("created_at ASC")
 	queryCount := config.DB.Model(&models.DiscountRate{})
 
 	if c.Query("all") == "true" {
 		pagination.Limit = -1
 		pagination.Offset = 0
+	}
+
+	if searchQuery := c.Query("search"); searchQuery != "" {
+		searchTerm := "%" + searchQuery + "%"
+		cond := "discount_rates.name ILIKE ? OR discount_rates.description ILIKE ?"
+		args := []interface{}{searchTerm, searchTerm}
+
+		query = query.Where(cond, args...)
+		queryCount = queryCount.Where(cond, args...)
 	}
 
 	if err := query.Offset(pagination.Offset).Limit(pagination.Limit).Find(&discountRates).Error; err != nil {
@@ -84,30 +117,85 @@ func GetDiscountRate(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body models.DiscountRate true "DiscountRate details"
+// @Param request body CreateDiscountRateRequest true "DiscountRate details"
 // @Success 201 {object} models.DiscountRate "Created discount rate"
 // @Failure 400 {object} map[string]interface{} "Invalid request body"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/discount-rates [post]
 func CreateDiscountRate(c *fiber.Ctx) error {
-	var discountRate models.DiscountRate
-	if err := c.BodyParser(&discountRate); err != nil {
+	var req CreateDiscountRateRequest
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
 		})
 	}
 
-	if discountRate.Name == "" {
+	if req.Name == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "name is required",
 		})
 	}
 
-	if discountRate.Discount < 0 || discountRate.Discount > 100 {
+	if req.Discount < 0 || req.Discount > 100 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "discount must be between 0 and 100",
 		})
+	}
+
+	if req.Periode < 1 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "periode must be at least 1",
+		})
+	}
+
+	yearStr, err := parseYearValue(req.Year)
+	if err != nil || yearStr == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "year is required and must be a valid year",
+		})
+	}
+
+	startDate, err := helpers.ParseDateString(req.StartDate)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid start_date format. Use YYYY-MM-DD",
+		})
+	}
+
+	endDate, err := helpers.ParseDateString(req.EndDate)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid end_date format. Use YYYY-MM-DD",
+		})
+	}
+
+	var existingCount int64
+	config.DB.Model(&models.DiscountRate{}).
+		Where("periode = ? AND year = ?", req.Periode, yearStr).
+		Count(&existingCount)
+	if existingCount > 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "A discount rate for this periode and year already exists",
+		})
+	}
+
+	if startDate != nil && endDate != nil {
+		if endDate.Before(*startDate) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "end_date must be after start_date",
+			})
+		}
+	}
+
+	discountRate := models.DiscountRate{
+		Name:        req.Name,
+		Discount:    req.Discount,
+		Periode:     req.Periode,
+		Year:        yearStr,
+		StartDate:   startDate,
+		EndDate:     endDate,
+		Description: req.Description,
 	}
 
 	if err := config.DB.Create(&discountRate).Error; err != nil {
@@ -127,7 +215,7 @@ func CreateDiscountRate(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "DiscountRate ID (UUID)"
-// @Param request body models.DiscountRate true "Updated discount rate details"
+// @Param request body CreateDiscountRateRequest true "Updated discount rate details"
 // @Success 200 {object} models.DiscountRate "Updated discount rate"
 // @Failure 400 {object} map[string]interface{} "Invalid request body"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
@@ -144,25 +232,69 @@ func UpdateDiscountRate(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := c.BodyParser(&discountRate); err != nil {
+	var req CreateDiscountRateRequest
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
 		})
 	}
 
-	if discountRate.Name == "" {
+	if req.Name == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "name is required",
 		})
 	}
 
-	if discountRate.Discount < 0 || discountRate.Discount > 100 {
+	if req.Discount < 0 || req.Discount > 100 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "discount must be between 0 and 100",
 		})
 	}
 
-	if err := config.DB.Model(&discountRate).Updates(discountRate).Error; err != nil {
+	if req.Periode < 1 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "periode must be at least 1",
+		})
+	}
+
+	yearStr, err := parseYearValue(req.Year)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "year is required and must be a valid year",
+		})
+	}
+
+	if req.Periode != discountRate.Periode || yearStr != discountRate.Year {
+		var existingCount int64
+		config.DB.Model(&models.DiscountRate{}).
+			Where("periode = ? AND year = ? AND id != ?", req.Periode, yearStr, id).
+			Count(&existingCount)
+		if existingCount > 0 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "A discount rate for this periode and year already exists",
+			})
+		}
+	}
+
+	startDate, _ := helpers.ParseDateString(req.StartDate)
+	endDate, _ := helpers.ParseDateString(req.EndDate)
+	if startDate != nil && endDate != nil {
+		if endDate.Before(*startDate) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "end_date must be after start_date",
+			})
+		}
+	}
+
+	discountRate.Name = req.Name
+	discountRate.Discount = req.Discount
+	discountRate.Periode = req.Periode
+	discountRate.Year = yearStr
+	discountRate.StartDate = startDate
+	discountRate.EndDate = endDate
+	discountRate.Description = req.Description
+
+	if err := config.DB.Model(&discountRate).Select("name", "discount", "periode", "year", "start_date", "end_date", "description", "updated_at").Updates(discountRate).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update discount rate",
 		})
@@ -205,96 +337,87 @@ func DeleteDiscountRate(c *fiber.Ctx) error {
 	})
 }
 
-// GetApplicableDiscount godoc
-// @Summary Preview applicable discount
-// @Description Preview the discount percentage and name based on installment date vs due dates
+// GetSalesTransactionDiscountValue godoc
+// @Summary Get discount value for a sales transaction
+// @Description Calculate discount percentage and amount based on transaction's periode, year, and payment date
 // @Tags DiscountRates
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param installment_date query string true "Installment date (ISO 8601: YYYY-MM-DD or RFC3339)"
-// @Param due_date query string false "Due date (ISO 8601: YYYY-MM-DD or RFC3339)"
-// @Param secondary_due_date query string false "Secondary due date (ISO 8601: YYYY-MM-DD or RFC3339)"
-// @Success 200 {object} map[string]interface{} "Applicable discount details"
+// @Param sales_transaction_id path string true "Sales Transaction ID (UUID)"
+// @Param date query string true "Payment transaction date (ISO 8601: YYYY-MM-DD or RFC3339)"
+// @Success 200 {object} map[string]interface{} "Discount calculation details"
 // @Failure 400 {object} map[string]interface{} "Invalid request"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Router /api/discount-rates/applicable [get]
-func GetApplicableDiscount(c *fiber.Ctx) error {
-	installmentDateStr := c.Query("installment_date")
-	dueDateStr := c.Query("due_date")
-	secondaryDueDateStr := c.Query("secondary_due_date")
+// @Failure 404 {object} map[string]interface{} "Transaction or discount rate not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/sales-transactions/{sales_transaction_id}/discount-value [get]
+func GetSalesTransactionDiscountValue(c *fiber.Ctx) error {
+	salesTransactionID := c.Params("sales_transaction_id")
+	dateStr := c.Query("date")
 
-	if installmentDateStr == "" {
+	if dateStr == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "installment_date query parameter is required",
+			"error": "date query parameter is required",
 		})
 	}
 
-	installmentDate, err := time.Parse(time.RFC3339, installmentDateStr)
+	paymentDate, err := time.Parse(time.RFC3339, dateStr)
 	if err != nil {
-		installmentDate, err = time.Parse("2006-01-02", installmentDateStr)
+		paymentDate, err = time.Parse("2006-01-02", dateStr)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Invalid installment_date format. Use ISO 8601 (YYYY-MM-DD or RFC3339)",
+				"error": "Invalid date format. Use ISO 8601 (YYYY-MM-DD or RFC3339)",
 			})
 		}
 	}
 
-	var dueDate, secondaryDueDate *time.Time
-	if dueDateStr != "" {
-		parsed, err := time.Parse(time.RFC3339, dueDateStr)
-		if err != nil {
-			parsed, err = time.Parse("2006-01-02", dueDateStr)
-			if err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-					"error": "Invalid due_date format. Use ISO 8601 (YYYY-MM-DD or RFC3339)",
-				})
-			}
-		}
-		dueDate = &parsed
+	var transaction models.SalesTransaction
+	if err := config.DB.Where("id = ?", salesTransactionID).First(&transaction).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Transaction not found",
+		})
 	}
 
-	if secondaryDueDateStr != "" {
-		parsed, err := time.Parse(time.RFC3339, secondaryDueDateStr)
-		if err != nil {
-			parsed, err = time.Parse("2006-01-02", secondaryDueDateStr)
-			if err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-					"error": "Invalid secondary_due_date format. Use ISO 8601 (YYYY-MM-DD or RFC3339)",
-				})
-			}
-		}
-		secondaryDueDate = &parsed
+	if transaction.PaymentType != "K" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Discount calculation is only applicable for credit transactions",
+		})
 	}
 
-	var discountPercentage float64
-	var discountName string
+	var discountRate models.DiscountRate
+	err = config.DB.Where("periode = ? AND year = ?", transaction.Periode, transaction.Year).
+		Where("start_date IS NOT NULL AND end_date IS NOT NULL").
+		Where("? BETWEEN start_date AND end_date", paymentDate).
+		First(&discountRate).Error
 
-	if dueDate != nil && !installmentDate.After(*dueDate) {
-		var earlyDiscount models.DiscountRate
-		if err := config.DB.Where("name ILIKE ?", "%early%").Order("created_at ASC").First(&earlyDiscount).Error; err == nil {
-			discountPercentage = earlyDiscount.Discount
-			discountName = earlyDiscount.Name
-		} else {
-			discountPercentage = 8
-			discountName = "Early Payment Discount"
-		}
-	} else if secondaryDueDate != nil && !installmentDate.After(*secondaryDueDate) {
-		var secondaryDiscount models.DiscountRate
-		if err := config.DB.Where("name ILIKE ?", "%secondary%").Order("created_at ASC").First(&secondaryDiscount).Error; err == nil {
-			discountPercentage = secondaryDiscount.Discount
-			discountName = secondaryDiscount.Name
-		} else {
-			discountPercentage = 5
-			discountName = "Secondary Payment Discount"
-		}
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error":        "No applicable discount rate found for this transaction's periode, year, and payment date",
+			"periode":      transaction.Periode,
+			"year":         transaction.Year,
+			"payment_date": paymentDate,
+		})
 	}
+
+	discountAmount := transaction.TotalAmount * (discountRate.Discount / 100)
+	amountAfterDiscount := transaction.TotalAmount - discountAmount
 
 	return c.JSON(fiber.Map{
-		"installment_date":    installmentDate,
-		"due_date":            dueDate,
-		"secondary_due_date":  secondaryDueDate,
-		"discount_percentage": discountPercentage,
-		"discount_name":       discountName,
+		"sales_transaction_id": transaction.ID,
+		"total_amount":         transaction.TotalAmount,
+		"payment_date":         paymentDate,
+		"periode":              transaction.Periode,
+		"year":                 transaction.Year,
+		"discount_rate": fiber.Map{
+			"id":                  discountRate.ID,
+			"name":                discountRate.Name,
+			"discount_percentage": discountRate.Discount,
+			"start_date":          discountRate.StartDate,
+			"end_date":            discountRate.EndDate,
+		},
+		"discount_percentage":   discountRate.Discount,
+		"discount_amount":       discountAmount,
+		"amount_after_discount": amountAfterDiscount,
 	})
 }

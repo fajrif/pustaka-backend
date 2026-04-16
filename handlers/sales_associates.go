@@ -1,11 +1,51 @@
 package handlers
 
 import (
+	"github.com/gofiber/fiber/v2"
 	"pustaka-backend/config"
 	"pustaka-backend/helpers"
 	"pustaka-backend/models"
-	"github.com/gofiber/fiber/v2"
 )
+
+type CreateSalesAssociateRequest struct {
+	Code            string  `json:"code"`
+	Name            string  `json:"name"`
+	NoKtp           *string `json:"no_ktp"`
+	Description     *string `json:"description"`
+	Address         string  `json:"address"`
+	CityID          *string `json:"city_id"`
+	Area            *string `json:"area"`
+	Phone1          string  `json:"phone1"`
+	Phone2          *string `json:"phone2"`
+	Email           *string `json:"email"`
+	Website         *string `json:"website"`
+	JenisPembayaran *string `json:"jenis_pembayaran"`
+	JoinDate        *string `json:"join_date"`
+	EndJoinDate     *string `json:"end_join_date"`
+	Discount        float64 `json:"discount"`
+	PhotoUrl        *string `json:"photo_url"`
+	FileUrl         *string `json:"file_url"`
+}
+
+type UpdateSalesAssociateRequest struct {
+	Code            *string  `json:"code"`
+	Name            *string  `json:"name"`
+	NoKtp           *string  `json:"no_ktp"`
+	Description     *string  `json:"description"`
+	Address         *string  `json:"address"`
+	CityID          *string  `json:"city_id"`
+	Area            *string  `json:"area"`
+	Phone1          *string  `json:"phone1"`
+	Phone2          *string  `json:"phone2"`
+	Email           *string  `json:"email"`
+	Website         *string  `json:"website"`
+	JenisPembayaran *string  `json:"jenis_pembayaran"`
+	JoinDate        *string  `json:"join_date"`
+	EndJoinDate     *string  `json:"end_join_date"`
+	Discount        *float64 `json:"discount"`
+	PhotoUrl        *string  `json:"photo_url"`
+	FileUrl         *string  `json:"file_url"`
+}
 
 // GetAllSalesAssociates godoc
 // @Summary Get all sales associates
@@ -99,18 +139,58 @@ func GetSalesAssociate(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body models.SalesAssociate true "SalesAssociate details"
+// @Param request body CreateSalesAssociateRequest true "SalesAssociate details"
 // @Success 201 {object} models.SalesAssociate "Created sales associate"
 // @Failure 400 {object} map[string]interface{} "Invalid request body"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /api/sales-associates [post]
 func CreateSalesAssociate(c *fiber.Ctx) error {
-	var salesAssociate models.SalesAssociate
-	if err := c.BodyParser(&salesAssociate); err != nil {
+	var req CreateSalesAssociateRequest
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
 		})
+	}
+
+	joinDate, err := helpers.ParseDateString(req.JoinDate)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid join_date format. Use YYYY-MM-DD",
+		})
+	}
+	if joinDate == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "join_date is required",
+		})
+	}
+
+	endJoinDate, _ := helpers.ParseDateString(req.EndJoinDate)
+
+	cityID := helpers.ParseUUIDPtr(req.CityID)
+
+	salesAssociate := models.SalesAssociate{
+		Code:            req.Code,
+		Name:            req.Name,
+		NoKtp:           req.NoKtp,
+		Description:     req.Description,
+		Address:         req.Address,
+		CityID:          cityID,
+		Area:            req.Area,
+		Phone1:          req.Phone1,
+		Phone2:          req.Phone2,
+		Email:           req.Email,
+		Website:         req.Website,
+		JenisPembayaran: "T",
+		JoinDate:        *joinDate,
+		EndJoinDate:     endJoinDate,
+		Discount:        req.Discount,
+		PhotoUrl:        req.PhotoUrl,
+		FileUrl:         req.FileUrl,
+	}
+
+	if req.JenisPembayaran != nil {
+		salesAssociate.JenisPembayaran = *req.JenisPembayaran
 	}
 
 	if err := config.DB.Create(&salesAssociate).Error; err != nil {
@@ -130,7 +210,7 @@ func CreateSalesAssociate(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "SalesAssociate ID (UUID)"
-// @Param request body models.SalesAssociate true "Updated sales associate details"
+// @Param request body UpdateSalesAssociateRequest true "Updated sales associate details"
 // @Success 200 {object} models.SalesAssociate "Updated sales associate"
 // @Failure 400 {object} map[string]interface{} "Invalid request body"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
@@ -147,18 +227,86 @@ func UpdateSalesAssociate(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := c.BodyParser(&salesAssociate); err != nil {
+	var req UpdateSalesAssociateRequest
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
 		})
 	}
 
-	if err := config.DB.Model(&salesAssociate).Updates(salesAssociate).Error; err != nil {
+	updates := make(map[string]interface{})
+
+	if req.Code != nil {
+		updates["code"] = *req.Code
+	}
+	if req.Name != nil {
+		updates["name"] = *req.Name
+	}
+	if req.NoKtp != nil {
+		updates["no_ktp"] = *req.NoKtp
+	}
+	if req.Description != nil {
+		updates["description"] = *req.Description
+	}
+	if req.Address != nil {
+		updates["address"] = *req.Address
+	}
+	if req.CityID != nil {
+		cityUUID := helpers.ParseUUIDPtr(req.CityID)
+		if cityUUID != nil {
+			updates["city_id"] = *cityUUID
+		}
+	}
+	if req.Area != nil {
+		updates["area"] = *req.Area
+	}
+	if req.Phone1 != nil {
+		updates["phone1"] = *req.Phone1
+	}
+	if req.Phone2 != nil {
+		updates["phone2"] = *req.Phone2
+	}
+	if req.Email != nil {
+		updates["email"] = *req.Email
+	}
+	if req.Website != nil {
+		updates["website"] = *req.Website
+	}
+	if req.JenisPembayaran != nil {
+		updates["jenis_pembayaran"] = *req.JenisPembayaran
+	}
+	if req.JoinDate != nil {
+		joinDate, err := helpers.ParseDateString(req.JoinDate)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid join_date format. Use YYYY-MM-DD",
+			})
+		}
+		if joinDate != nil {
+			updates["join_date"] = *joinDate
+		}
+	}
+	if req.EndJoinDate != nil {
+		endJoinDate, _ := helpers.ParseDateString(req.EndJoinDate)
+		updates["end_join_date"] = endJoinDate
+	}
+	if req.Discount != nil {
+		updates["discount"] = *req.Discount
+	}
+	if req.PhotoUrl != nil {
+		updates["photo_url"] = *req.PhotoUrl
+	}
+	if req.FileUrl != nil {
+		updates["file_url"] = *req.FileUrl
+	}
+
+	if err := config.DB.Model(&salesAssociate).Updates(updates).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update sales associate",
 		})
 	}
 
+	config.DB.Where("id = ?", id).First(&salesAssociate)
 	return c.JSON(salesAssociate)
 }
 

@@ -11,8 +11,8 @@ import (
 	"pustaka-backend/config"
 	"pustaka-backend/handlers"
 	"pustaka-backend/models"
+	"pustaka-backend/tests/testutil"
 	"testing"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -133,7 +133,7 @@ func TestUpdateSalesTransaction_Scenario1_CreateTransaction(t *testing.T) {
 		createReq := handlers.CreateTransactionRequest{
 			SalesAssociateID: salesAssociate.ID.String(),
 			PaymentType:      "T",
-			TransactionDate:  time.Now(),
+			TransactionDate:  testutil.StringPtr("2024-01-15"),
 			Periode:          1,
 			Year:             "2024",
 			Items: []handlers.CreateTransactionItemRequest{
@@ -212,7 +212,7 @@ func TestUpdateSalesTransaction_Scenario2_UpdateItems(t *testing.T) {
 		createReq := handlers.CreateTransactionRequest{
 			SalesAssociateID: salesAssociate.ID.String(),
 			PaymentType:      "T",
-			TransactionDate:  time.Now(),
+			TransactionDate:  testutil.StringPtr("2024-01-15"),
 			Periode:          1,
 			Year:             "2024",
 			Items: []handlers.CreateTransactionItemRequest{
@@ -380,7 +380,7 @@ func TestUpdateSalesTransaction_DuplicateBookIDValidation(t *testing.T) {
 	createReq := handlers.CreateTransactionRequest{
 		SalesAssociateID: salesAssociate.ID.String(),
 		PaymentType:      "T",
-		TransactionDate:  time.Now(),
+		TransactionDate:  testutil.StringPtr("2024-01-15"),
 		Periode:          1,
 		Year:             "2024",
 		Items: []handlers.CreateTransactionItemRequest{

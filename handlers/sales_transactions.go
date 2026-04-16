@@ -17,9 +17,7 @@ import (
 type CreateTransactionRequest struct {
 	SalesAssociateID string                         `json:"sales_associate_id"`
 	PaymentType      string                         `json:"payment_type"` // 'T' or 'K'
-	TransactionDate  time.Time                      `json:"transaction_date"`
-	DueDate          *time.Time                     `json:"due_date"`
-	SecondaryDueDate *time.Time                     `json:"secondary_due_date"`
+	TransactionDate  *string                        `json:"transaction_date"`
 	Periode          int                            `json:"periode"`
 	Year             string                         `json:"year"`
 	CurriculumID     *string                        `json:"curriculum_id"`
@@ -51,15 +49,6 @@ func calculateItemSubtotal(price float64, quantity int, promotion float64, disco
 	return afterDiscount * float64(quantity)
 }
 
-// CreateInstallmentRequest represents an installment payment
-type CreateInstallmentRequest struct {
-	InstallmentDate    time.Time `json:"installment_date"`
-	Amount             float64   `json:"amount"`
-	Note               *string   `json:"note"`
-	DiscountPercentage float64   `json:"discount_percentage"`
-	DiscountAmount     float64   `json:"discount_amount"`
-}
-
 // generateInvoiceNumber generates sequential invoice number: INV + YYYYMMDD + 8-digit sequence
 // Example: INV2023120500000001
 func generateInvoiceNumber(db *gorm.DB) (string, error) {
@@ -71,35 +60,6 @@ func generateInvoiceNumber(db *gorm.DB) (string, error) {
 	err := db.Model(&models.SalesTransaction{}).
 		Where("no_invoice LIKE ?", pattern).
 		Select("COALESCE(MAX(no_invoice), '')").
-		Scan(&maxNumber).Error
-
-	if err != nil {
-		return "", err
-	}
-
-	nextSeq := 1
-	if maxNumber != "" {
-		// Extract sequence part (last 8 digits)
-		seqStr := maxNumber[len(prefix)+8:] // Skip prefix (3) + date (8)
-		if seq, err := strconv.Atoi(seqStr); err == nil {
-			nextSeq = seq + 1
-		}
-	}
-
-	return fmt.Sprintf("%s%s%08d", prefix, dateStr, nextSeq), nil
-}
-
-// generateInstallmentNumber generates sequential installment number: PKR + YYYYMMDD + 8-digit sequence
-// Example: PKR2023120500000001
-func generateInstallmentNumber(db *gorm.DB) (string, error) {
-	prefix := "PKR"
-	dateStr := time.Now().Format("20060102") // YYYYMMDD
-	pattern := prefix + dateStr + "%"
-
-	var maxNumber string
-	err := db.Model(&models.SalesTransactionInstallment{}).
-		Where("no_installment LIKE ?", pattern).
-		Select("COALESCE(MAX(no_installment), '')").
 		Scan(&maxNumber).Error
 
 	if err != nil {
@@ -395,27 +355,6 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 		})
 	}
 
-	// If payment type is credit, due_date is required
-	if req.PaymentType == "K" && req.DueDate == nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "due_date is required for credit payment",
-		})
-	}
-
-	// Validate secondary_due_date
-	if req.SecondaryDueDate != nil {
-		if req.PaymentType == "T" {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "secondary_due_date is only allowed for credit payments (payment_type = 'K')",
-			})
-		}
-		if req.DueDate != nil && !req.SecondaryDueDate.After(*req.DueDate) {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "secondary_due_date must be after due_date",
-			})
-		}
-	}
-
 	// Validate discount is only allowed for cash payments
 	if req.PaymentType == "K" {
 		for _, item := range req.Items {
@@ -524,14 +463,24 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 	}
 
 	// Create the transaction
+	transactionDate, err := helpers.ParseDateString(req.TransactionDate)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	if transactionDate == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "transaction_date is required",
+		})
+	}
+
 	transaction := models.SalesTransaction{
 		BillerID:         &defaultBiller.ID,
 		SalesAssociateID: helpers.ParseUUID(req.SalesAssociateID),
 		NoInvoice:        noInvoice,
 		PaymentType:      req.PaymentType,
-		TransactionDate:  req.TransactionDate,
-		DueDate:          req.DueDate,
-		SecondaryDueDate: req.SecondaryDueDate,
+		TransactionDate:  *transactionDate,
 		TotalAmount:      totalAmount,
 		Status:           0, // Default to booking
 		Periode:          req.Periode,
@@ -590,9 +539,7 @@ func CreateSalesTransaction(c *fiber.Ctx) error {
 type UpdateTransactionRequest struct {
 	SalesAssociateID *string                        `json:"sales_associate_id"`
 	PaymentType      *string                        `json:"payment_type"`
-	TransactionDate  *time.Time                     `json:"transaction_date"`
-	DueDate          *time.Time                     `json:"due_date"`
-	SecondaryDueDate *time.Time                     `json:"secondary_due_date"`
+	TransactionDate  *string                        `json:"transaction_date"`
 	Status           *int                           `json:"status"`
 	Periode          *int                           `json:"periode"`
 	Year             *string                        `json:"year"`
@@ -686,39 +633,15 @@ func UpdateSalesTransaction(c *fiber.Ctx) error {
 	}
 
 	if req.TransactionDate != nil {
-		updates["transaction_date"] = *req.TransactionDate
-	}
-
-	// Handle due_date - can be set to nil
-	if req.DueDate != nil {
-		updates["due_date"] = *req.DueDate
-	}
-
-	// Handle secondary_due_date
-	if req.SecondaryDueDate != nil {
-		// Determine effective payment type
-		effectivePaymentType := transaction.PaymentType
-		if req.PaymentType != nil {
-			effectivePaymentType = *req.PaymentType
-		}
-		if effectivePaymentType == "T" {
-			tx.Rollback()
+		parsedDate, err := helpers.ParseDateString(req.TransactionDate)
+		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "secondary_due_date is only allowed for credit payments (payment_type = 'K')",
+				"error": err.Error(),
 			})
 		}
-		// Determine effective due_date for comparison
-		effectiveDueDate := transaction.DueDate
-		if req.DueDate != nil {
-			effectiveDueDate = req.DueDate
+		if parsedDate != nil {
+			updates["transaction_date"] = *parsedDate
 		}
-		if effectiveDueDate != nil && !req.SecondaryDueDate.After(*effectiveDueDate) {
-			tx.Rollback()
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "secondary_due_date must be after due_date",
-			})
-		}
-		updates["secondary_due_date"] = *req.SecondaryDueDate
 	}
 
 	if req.Status != nil {
@@ -1025,202 +948,5 @@ func DeleteSalesTransaction(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"message": "Transaction deleted successfully",
-	})
-}
-
-// AddInstallment godoc
-// @Summary Add an installment to an existing transaction
-// @Description Add a new installment payment to a credit transaction
-// @Tags Sales Transactions
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param transaction_id path string true "Transaction ID (UUID)"
-// @Param request body CreateInstallmentRequest true "Installment details"
-// @Success 201 {object} models.SalesTransactionInstallment "Created installment"
-// @Failure 400 {object} map[string]interface{} "Invalid request body"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 404 {object} map[string]interface{} "Transaction not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /api/sales-transactions/{transaction_id}/installments [post]
-func AddInstallment(c *fiber.Ctx) error {
-	id := c.Params("transaction_id")
-
-	// Verify transaction exists and is a credit transaction
-	var transaction models.SalesTransaction
-	if err := config.DB.Where("id = ?", id).First(&transaction).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Transaction not found",
-		})
-	}
-
-	if transaction.PaymentType != "K" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Installments can only be added to credit transactions",
-		})
-	}
-
-	var req CreateInstallmentRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
-	}
-
-	// Validate amount
-	if req.Amount <= 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Amount must be greater than 0",
-		})
-	}
-
-	// Generate installment number
-	noInstallment, err := generateInstallmentNumber(config.DB)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to generate installment number",
-		})
-	}
-
-	installment := models.SalesTransactionInstallment{
-		TransactionID:      transaction.ID,
-		NoInstallment:      noInstallment,
-		InstallmentDate:    req.InstallmentDate,
-		Amount:             req.Amount,
-		Note:               req.Note,
-		DiscountPercentage: req.DiscountPercentage,
-		DiscountAmount:     req.DiscountAmount,
-	}
-
-	if err := config.DB.Create(&installment).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create installment",
-		})
-	}
-
-	// Check if total effective amount (amount + discount) >= total amount
-	var totalEffective float64
-	config.DB.Model(&models.SalesTransactionInstallment{}).
-		Where("transaction_id = ?", transaction.ID).
-		Select("COALESCE(SUM(amount + discount_amount), 0)").
-		Scan(&totalEffective)
-
-	if totalEffective >= transaction.TotalAmount {
-		config.DB.Model(&transaction).Update("status", 1) // Paid-off
-	} else {
-		config.DB.Model(&transaction).Update("status", 2) // Installment
-	}
-
-	return c.Status(fiber.StatusCreated).JSON(installment)
-}
-
-// GetTransactionInstallments godoc
-// @Summary Get all installments for a transaction
-// @Description Retrieve all installment payments for a specific transaction
-// @Tags Sales Transactions
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param transaction_id path string true "Transaction ID (UUID)"
-// @Success 200 {object} map[string]interface{} "List of installments"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 404 {object} map[string]interface{} "Transaction not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /api/sales-transactions/{transaction_id}/installments [get]
-func GetTransactionInstallments(c *fiber.Ctx) error {
-	id := c.Params("transaction_id")
-
-	// Verify transaction exists
-	var transaction models.SalesTransaction
-	if err := config.DB.Where("id = ?", id).First(&transaction).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Transaction not found",
-		})
-	}
-
-	var installments []models.SalesTransactionInstallment
-	if err := config.DB.
-		Where("transaction_id = ?", id).
-		Order("installment_date ASC").
-		Find(&installments).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch installments",
-		})
-	}
-
-	// Calculate totals
-	var totalPaid float64
-	var totalDiscount float64
-	for _, inst := range installments {
-		totalPaid += inst.Amount
-		totalDiscount += inst.DiscountAmount
-	}
-	totalEffective := totalPaid + totalDiscount
-
-	return c.JSON(fiber.Map{
-		"transaction_id":     transaction.ID,
-		"total_amount":       transaction.TotalAmount,
-		"total_paid":         totalPaid,
-		"total_discount":     totalDiscount,
-		"total_effective":    totalEffective,
-		"remaining":          transaction.TotalAmount - totalEffective,
-		"due_date":           transaction.DueDate,
-		"secondary_due_date": transaction.SecondaryDueDate,
-		"installments":       installments,
-	})
-}
-
-// DeleteInstallment godoc
-// @Summary Delete a sales transaction installment
-// @Description Delete a sales transaction installment by ID
-// @Tags Sales Transactions
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param transaction_id path string true "Transaction ID (UUID)"
-// @Success 200 {object} map[string]interface{} "Transaction deleted successfully"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 404 {object} map[string]interface{} "Transaction not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /api/sales-transactions/{transaction_id}/installments/{id} [delete]
-func DeleteInstallment(c *fiber.Ctx) error {
-	id := c.Params("id")
-	transactionID := c.Params("transaction_id")
-
-	result := config.DB.
-		Where("id = ? AND transaction_id = ?", id, transactionID).
-		Delete(&models.SalesTransactionInstallment{})
-	if result.Error != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to delete installment",
-		})
-	}
-
-	if result.RowsAffected == 0 {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Installment not found",
-		})
-	}
-
-	// Recalculate transaction status after deletion
-	var transaction models.SalesTransaction
-	if err := config.DB.Where("id = ?", transactionID).First(&transaction).Error; err == nil {
-		var totalEffective float64
-		config.DB.Model(&models.SalesTransactionInstallment{}).
-			Where("transaction_id = ?", transactionID).
-			Select("COALESCE(SUM(amount + discount_amount), 0)").
-			Scan(&totalEffective)
-
-		if totalEffective >= transaction.TotalAmount {
-			config.DB.Model(&transaction).Update("status", 1) // Paid-off
-		} else if totalEffective > 0 {
-			config.DB.Model(&transaction).Update("status", 2) // Installment
-		} else {
-			config.DB.Model(&transaction).Update("status", 0) // Booking
-		}
-	}
-
-	return c.JSON(fiber.Map{
-		"message": "Installment deleted successfully",
 	})
 }

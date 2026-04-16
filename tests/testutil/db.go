@@ -9,6 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
+func StringPtr(s string) *string {
+	return &s
+}
+
 // SetupMockDB creates a mock database connection for testing
 func SetupMockDB() (*sql.DB, sqlmock.Sqlmock, error) {
 	db, mock, err := sqlmock.New()

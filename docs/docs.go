@@ -1753,7 +1753,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.DiscountRate"
+                            "$ref": "#/definitions/handlers.CreateDiscountRateRequest"
                         }
                     }
                 ],
@@ -1780,70 +1780,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/discount-rates/applicable": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Preview the discount percentage and name based on installment date vs due dates",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "DiscountRates"
-                ],
-                "summary": "Preview applicable discount",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Installment date (ISO 8601: YYYY-MM-DD or RFC3339)",
-                        "name": "installment_date",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Due date (ISO 8601: YYYY-MM-DD or RFC3339)",
-                        "name": "due_date",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Secondary due date (ISO 8601: YYYY-MM-DD or RFC3339)",
-                        "name": "secondary_due_date",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Applicable discount details",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1934,7 +1870,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.DiscountRate"
+                            "$ref": "#/definitions/handlers.CreateDiscountRateRequest"
                         }
                     }
                 ],
@@ -4979,7 +4915,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.SalesAssociate"
+                            "$ref": "#/definitions/handlers.CreateSalesAssociateRequest"
                         }
                     }
                 ],
@@ -5096,7 +5032,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.SalesAssociate"
+                            "$ref": "#/definitions/handlers.UpdateSalesAssociateRequest"
                         }
                     }
                 ],
@@ -5557,14 +5493,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/sales-transactions/{transaction_id}/installments": {
+        "/api/sales-transactions/{sales_transaction_id}/discount-value": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve all installment payments for a specific transaction",
+                "description": "Calculate discount percentage and amount based on transaction's periode, year, and payment date",
                 "consumes": [
                     "application/json"
                 ],
@@ -5572,284 +5508,35 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Sales Transactions"
+                    "DiscountRates"
                 ],
-                "summary": "Get all installments for a transaction",
+                "summary": "Get discount value for a sales transaction",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Transaction ID (UUID)",
-                        "name": "transaction_id",
+                        "description": "Sales Transaction ID (UUID)",
+                        "name": "sales_transaction_id",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Payment transaction date (ISO 8601: YYYY-MM-DD or RFC3339)",
+                        "name": "date",
+                        "in": "query",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of installments",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Transaction not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Add a new installment payment to a credit transaction",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Sales Transactions"
-                ],
-                "summary": "Add an installment to an existing transaction",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Transaction ID (UUID)",
-                        "name": "transaction_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Installment details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.CreateInstallmentRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created installment",
-                        "schema": {
-                            "$ref": "#/definitions/models.SalesTransactionInstallment"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request body",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Transaction not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/sales-transactions/{transaction_id}/installments/{id}": {
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Delete a sales transaction installment by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Sales Transactions"
-                ],
-                "summary": "Delete a sales transaction installment",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Transaction ID (UUID)",
-                        "name": "transaction_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Transaction deleted successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Transaction not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/sales-transactions/{transaction_id}/payments": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Retrieve all payments for a specific sales transaction",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Payments"
-                ],
-                "summary": "Get all payments for a transaction",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Transaction ID (UUID)",
-                        "name": "transaction_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List of payments with summary",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Transaction not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Add a payment to a sales transaction. Validates that total payments don't exceed transaction total.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Payments"
-                ],
-                "summary": "Create a new payment for a transaction",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Transaction ID (UUID)",
-                        "name": "transaction_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Payment details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.CreatePaymentRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created payment with transaction summary",
+                        "description": "Discount calculation details",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid request body or validation error",
+                        "description": "Invalid request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -5863,73 +5550,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Transaction not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/sales-transactions/{transaction_id}/payments/{id}": {
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Delete a payment from a sales transaction. Updates transaction status accordingly.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Payments"
-                ],
-                "summary": "Delete a payment",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Transaction ID (UUID)",
-                        "name": "transaction_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Payment ID (UUID)",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Payment deleted successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Payment not found",
+                        "description": "Transaction or discount rate not found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -6714,38 +6335,28 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.CreateInstallmentRequest": {
+        "handlers.CreateDiscountRateRequest": {
             "type": "object",
             "properties": {
-                "amount": {
-                    "type": "number"
-                },
-                "discount_amount": {
-                    "type": "number"
-                },
-                "discount_percentage": {
-                    "type": "number"
-                },
-                "installment_date": {
+                "description": {
                     "type": "string"
                 },
-                "note": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.CreatePaymentRequest": {
-            "type": "object",
-            "properties": {
-                "amount": {
+                "discount": {
                     "type": "number"
                 },
-                "note": {
+                "end_date": {
                     "type": "string"
                 },
-                "payment_date": {
+                "name": {
                     "type": "string"
-                }
+                },
+                "periode": {
+                    "type": "integer"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "year": {}
             }
         },
         "handlers.CreatePurchaseTransactionItemReq": {
@@ -6778,6 +6389,62 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.Date"
                 },
                 "supplier_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.CreateSalesAssociateRequest": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "area": {
+                    "type": "string"
+                },
+                "city_id": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "discount": {
+                    "type": "number"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "end_join_date": {
+                    "type": "string"
+                },
+                "file_url": {
+                    "type": "string"
+                },
+                "jenis_pembayaran": {
+                    "type": "string"
+                },
+                "join_date": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "no_ktp": {
+                    "type": "string"
+                },
+                "phone1": {
+                    "type": "string"
+                },
+                "phone2": {
+                    "type": "string"
+                },
+                "photo_url": {
+                    "type": "string"
+                },
+                "website": {
                     "type": "string"
                 }
             }
@@ -6821,9 +6488,6 @@ const docTemplate = `{
                 "curriculum_id": {
                     "type": "string"
                 },
-                "due_date": {
-                    "type": "string"
-                },
                 "items": {
                     "type": "array",
                     "items": {
@@ -6844,9 +6508,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "sales_associate_id": {
-                    "type": "string"
-                },
-                "secondary_due_date": {
                     "type": "string"
                 },
                 "transaction_date": {
@@ -6903,6 +6564,62 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.UpdateSalesAssociateRequest": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "area": {
+                    "type": "string"
+                },
+                "city_id": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "discount": {
+                    "type": "number"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "end_join_date": {
+                    "type": "string"
+                },
+                "file_url": {
+                    "type": "string"
+                },
+                "jenis_pembayaran": {
+                    "type": "string"
+                },
+                "join_date": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "no_ktp": {
+                    "type": "string"
+                },
+                "phone1": {
+                    "type": "string"
+                },
+                "phone2": {
+                    "type": "string"
+                },
+                "photo_url": {
+                    "type": "string"
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.UpdateShippingRequest": {
             "type": "object",
             "properties": {
@@ -6921,9 +6638,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "curriculum_id": {
-                    "type": "string"
-                },
-                "due_date": {
                     "type": "string"
                 },
                 "items": {
@@ -6945,9 +6659,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "sales_associate_id": {
-                    "type": "string"
-                },
-                "secondary_due_date": {
                     "type": "string"
                 },
                 "status": {
@@ -7186,13 +6897,25 @@ const docTemplate = `{
                 "discount": {
                     "type": "number"
                 },
+                "end_date": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
+                "periode": {
+                    "type": "integer"
+                },
+                "start_date": {
+                    "type": "string"
+                },
                 "updated_at": {
+                    "type": "string"
+                },
+                "year": {
                     "type": "string"
                 }
             }
@@ -7360,6 +7083,12 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "type": "string"
+                },
+                "discount_amount": {
+                    "type": "number"
+                },
+                "discount_percentage": {
+                    "type": "number"
                 },
                 "id": {
                     "type": "string"
@@ -7599,9 +7328,6 @@ const docTemplate = `{
                 "curriculum_id": {
                     "type": "string"
                 },
-                "due_date": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -7645,9 +7371,6 @@ const docTemplate = `{
                 "sales_associate_id": {
                     "type": "string"
                 },
-                "secondary_due_date": {
-                    "type": "string"
-                },
                 "shippings": {
                     "type": "array",
                     "items": {
@@ -7668,41 +7391,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "year": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.SalesTransactionInstallment": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "number"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "discount_amount": {
-                    "type": "number"
-                },
-                "discount_percentage": {
-                    "type": "number"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "installment_date": {
-                    "type": "string"
-                },
-                "no_installment": {
-                    "type": "string"
-                },
-                "note": {
-                    "type": "string"
-                },
-                "transaction_id": {
-                    "type": "string"
-                },
-                "updated_at": {
                     "type": "string"
                 }
             }
