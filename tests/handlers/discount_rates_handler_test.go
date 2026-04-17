@@ -119,12 +119,14 @@ func TestCreateDiscountRate(t *testing.T) {
 		defer testutil.CloseMockDB(db)
 
 		startDateStr := "2024-01-01"
-		endDateStr := "2024-01-31"
+		endDateStr := "2024-03-31"
+		startDate := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+		endDate := time.Date(2024, 3, 31, 0, 0, 0, 0, time.UTC)
 
-		countRows := sqlmock.NewRows([]string{"count"}).AddRow(0)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "discount_rates" WHERE periode = $1 AND year = $2`)).
-			WithArgs(1, "2024").
-			WillReturnRows(countRows)
+		overlappingRows := sqlmock.NewRows([]string{"count"}).AddRow(0)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "discount_rates" WHERE (year = $1 AND start_date IS NOT NULL AND end_date IS NOT NULL) AND (start_date, end_date) OVERLAPS ($2, $3)`)).
+			WithArgs("2024", startDate, endDate).
+			WillReturnRows(overlappingRows)
 
 		mock.ExpectBegin()
 		mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "discount_rates"`)).
@@ -207,11 +209,11 @@ func TestCreateDiscountRate(t *testing.T) {
 		assert.Equal(t, "discount must be between 0 and 100", response["error"])
 	})
 
-	t.Run("Periode must be at least 1", func(t *testing.T) {
+	t.Run("Periode must be 1 or 2", func(t *testing.T) {
 		reqBody := handlers.CreateDiscountRateRequest{
 			Name:     "Test Discount",
 			Discount: 8.00,
-			Periode:  0,
+			Periode:  3,
 			Year:     "2024",
 		}
 
@@ -226,7 +228,7 @@ func TestCreateDiscountRate(t *testing.T) {
 		respBody, _ := io.ReadAll(resp.Body)
 		json.Unmarshal(respBody, &response)
 
-		assert.Equal(t, "periode must be at least 1", response["error"])
+		assert.Equal(t, "periode must be 1 or 2", response["error"])
 	})
 
 	t.Run("Year is required", func(t *testing.T) {
@@ -251,46 +253,20 @@ func TestCreateDiscountRate(t *testing.T) {
 		assert.Equal(t, "year is required and must be a valid year", response["error"])
 	})
 
-	t.Run("Duplicate periode and year", func(t *testing.T) {
-		db, mock, err := testutil.SetupMockDB()
-		assert.NoError(t, err)
-		defer testutil.CloseMockDB(db)
-
-		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "discount_rates" WHERE periode = $1 AND year = $2`)).
-			WithArgs(1, "2024").
-			WillReturnRows(countRows)
-
-		reqBody := handlers.CreateDiscountRateRequest{
-			Name:     "Duplicate Discount",
-			Discount: 8.00,
-			Periode:  1,
-			Year:     "2024",
-		}
-
-		body, _ := json.Marshal(reqBody)
-		req := httptest.NewRequest("POST", "/discount-rates", bytes.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, _ := app.Test(req)
-		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-
-		var response map[string]interface{}
-		respBody, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &response)
-
-		assert.Equal(t, "A discount rate for this periode and year already exists", response["error"])
-	})
-
 	t.Run("Year as number should work", func(t *testing.T) {
 		db, mock, err := testutil.SetupMockDB()
 		assert.NoError(t, err)
 		defer testutil.CloseMockDB(db)
 
-		countRows := sqlmock.NewRows([]string{"count"}).AddRow(0)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "discount_rates" WHERE periode = $1 AND year = $2`)).
-			WithArgs(1, "2024").
-			WillReturnRows(countRows)
+		startDateStr := "2024-01-01"
+		endDateStr := "2024-03-31"
+		startDate := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+		endDate := time.Date(2024, 3, 31, 0, 0, 0, 0, time.UTC)
+
+		overlappingRows := sqlmock.NewRows([]string{"count"}).AddRow(0)
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "discount_rates" WHERE (year = $1 AND start_date IS NOT NULL AND end_date IS NOT NULL) AND (start_date, end_date) OVERLAPS ($2, $3)`)).
+			WithArgs("2024", startDate, endDate).
+			WillReturnRows(overlappingRows)
 
 		mock.ExpectBegin()
 		mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "discount_rates"`)).
@@ -299,10 +275,12 @@ func TestCreateDiscountRate(t *testing.T) {
 		mock.ExpectCommit()
 
 		reqBody := map[string]interface{}{
-			"name":     "Discount",
-			"discount": 8.00,
-			"periode":  1,
-			"year":     2024, // year as number
+			"name":       "Discount",
+			"discount":   8.00,
+			"periode":    1,
+			"year":       2024,
+			"start_date": startDateStr,
+			"end_date":   endDateStr,
 		}
 
 		body, _ := json.Marshal(reqBody)

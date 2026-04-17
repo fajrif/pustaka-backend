@@ -143,16 +143,16 @@ func CreateDiscountRate(c *fiber.Ctx) error {
 		})
 	}
 
-	if req.Periode < 1 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "periode must be at least 1",
-		})
-	}
-
 	yearStr, err := parseYearValue(req.Year)
 	if err != nil || yearStr == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "year is required and must be a valid year",
+		})
+	}
+
+	if req.Periode != 1 && req.Periode != 2 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "periode must be 1 or 2",
 		})
 	}
 
@@ -170,20 +170,22 @@ func CreateDiscountRate(c *fiber.Ctx) error {
 		})
 	}
 
-	var existingCount int64
-	config.DB.Model(&models.DiscountRate{}).
-		Where("periode = ? AND year = ?", req.Periode, yearStr).
-		Count(&existingCount)
-	if existingCount > 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "A discount rate for this periode and year already exists",
-		})
-	}
-
 	if startDate != nil && endDate != nil {
 		if endDate.Before(*startDate) {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "end_date must be after start_date",
+			})
+		}
+
+		var overlappingCount int64
+		config.DB.Model(&models.DiscountRate{}).
+			Where("year = ? AND start_date IS NOT NULL AND end_date IS NOT NULL", yearStr).
+			Where("(start_date, end_date) OVERLAPS (?, ?)", startDate, endDate).
+			Count(&overlappingCount)
+
+		if overlappingCount > 0 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Date range overlaps with existing discount rate",
 			})
 		}
 	}
@@ -251,12 +253,6 @@ func UpdateDiscountRate(c *fiber.Ctx) error {
 		})
 	}
 
-	if req.Periode < 1 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "periode must be at least 1",
-		})
-	}
-
 	yearStr, err := parseYearValue(req.Year)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -264,16 +260,10 @@ func UpdateDiscountRate(c *fiber.Ctx) error {
 		})
 	}
 
-	if req.Periode != discountRate.Periode || yearStr != discountRate.Year {
-		var existingCount int64
-		config.DB.Model(&models.DiscountRate{}).
-			Where("periode = ? AND year = ? AND id != ?", req.Periode, yearStr, id).
-			Count(&existingCount)
-		if existingCount > 0 {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "A discount rate for this periode and year already exists",
-			})
-		}
+	if req.Periode != 1 && req.Periode != 2 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "periode must be 1 or 2",
+		})
 	}
 
 	startDate, _ := helpers.ParseDateString(req.StartDate)
@@ -282,6 +272,18 @@ func UpdateDiscountRate(c *fiber.Ctx) error {
 		if endDate.Before(*startDate) {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "end_date must be after start_date",
+			})
+		}
+
+		var overlappingCount int64
+		config.DB.Model(&models.DiscountRate{}).
+			Where("year = ? AND start_date IS NOT NULL AND end_date IS NOT NULL AND id != ?", yearStr, id).
+			Where("(start_date, end_date) OVERLAPS (?, ?)", startDate, endDate).
+			Count(&overlappingCount)
+
+		if overlappingCount > 0 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Date range overlaps with existing discount rate",
 			})
 		}
 	}
