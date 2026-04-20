@@ -179,7 +179,7 @@ func CreateDiscountRate(c *fiber.Ctx) error {
 
 		var overlappingCount int64
 		config.DB.Model(&models.DiscountRate{}).
-			Where("year = ? AND start_date IS NOT NULL AND end_date IS NOT NULL", yearStr).
+			Where("start_date IS NOT NULL AND end_date IS NOT NULL").
 			Where("(start_date, end_date) OVERLAPS (?, ?)", startDate, endDate).
 			Count(&overlappingCount)
 
@@ -277,7 +277,7 @@ func UpdateDiscountRate(c *fiber.Ctx) error {
 
 		var overlappingCount int64
 		config.DB.Model(&models.DiscountRate{}).
-			Where("year = ? AND start_date IS NOT NULL AND end_date IS NOT NULL AND id != ?", yearStr, id).
+			Where("start_date IS NOT NULL AND end_date IS NOT NULL AND id != ?", id).
 			Where("(start_date, end_date) OVERLAPS (?, ?)", startDate, endDate).
 			Count(&overlappingCount)
 
