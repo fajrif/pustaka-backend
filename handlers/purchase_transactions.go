@@ -33,6 +33,7 @@ type UpdatePurchaseTransactionRequest struct {
 	SupplierID   *string                            `json:"supplier_id"`
 	PurchaseDate *models.Date                       `json:"purchase_date"`
 	Note         *string                            `json:"note"`
+	Status       *int                               `json:"status"`
 	Items        []CreatePurchaseTransactionItemReq `json:"items,omitempty"`
 }
 
@@ -413,7 +414,7 @@ func CreatePurchaseTransaction(c *fiber.Ctx) error {
 		})
 	}
 
-	// Fetch the complete transaction with all relations
+	// Fetch the created transaction with all relations
 	var createdTransaction models.PurchaseTransaction
 	config.DB.
 		Preload("Supplier").
@@ -476,7 +477,6 @@ func UpdatePurchaseTransaction(c *fiber.Ctx) error {
 	updates := make(map[string]interface{})
 
 	if req.SupplierID != nil {
-		// Verify supplier exists
 		var supplier models.Publisher
 		if err := tx.Where("id = ?", *req.SupplierID).First(&supplier).Error; err != nil {
 			tx.Rollback()
@@ -495,9 +495,13 @@ func UpdatePurchaseTransaction(c *fiber.Ctx) error {
 		updates["note"] = *req.Note
 	}
 
+	if req.Status != nil {
+		updates["status"] = *req.Status
+	}
+
 	// Handle items updates
-	if req.Items != nil && len(req.Items) > 0 {
-		// Delete existing items
+	if len(req.Items) > 0 {
+		// Delete existing items directly by foreign key to avoid GORM association state issues
 		if err := tx.Where("purchase_transaction_id = ?", transaction.ID).
 			Delete(&models.PurchaseTransactionItem{}).Error; err != nil {
 			tx.Rollback()
@@ -506,12 +510,10 @@ func UpdatePurchaseTransaction(c *fiber.Ctx) error {
 			})
 		}
 
-		// Create new items
 		var totalAmount float64
 		var newItems []models.PurchaseTransactionItem
 
 		for _, item := range req.Items {
-			// Verify book exists
 			var book models.Book
 			if err := tx.Where("id = ?", item.BookID).First(&book).Error; err != nil {
 				tx.Rollback()
@@ -520,7 +522,6 @@ func UpdatePurchaseTransaction(c *fiber.Ctx) error {
 				})
 			}
 
-			// Validate quantity and price
 			if item.Quantity <= 0 {
 				tx.Rollback()
 				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -547,8 +548,8 @@ func UpdatePurchaseTransaction(c *fiber.Ctx) error {
 			})
 		}
 
-		// Create new items
-		if err := tx.Create(&newItems).Error; err != nil {
+		// Use Omit("Items") to prevent GORM from auto-saving associations
+		if err := tx.Omit("Items").Create(&newItems).Error; err != nil {
 			tx.Rollback()
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to create new items",
@@ -558,9 +559,9 @@ func UpdatePurchaseTransaction(c *fiber.Ctx) error {
 		updates["total_amount"] = totalAmount
 	}
 
-	// Apply updates
+	// Apply updates using map to avoid any association cascade
 	if len(updates) > 0 {
-		if err := tx.Model(&transaction).Updates(updates).Error; err != nil {
+		if err := tx.Model(&transaction).Omit("Items").Updates(updates).Error; err != nil {
 			tx.Rollback()
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to update purchase transaction",
@@ -568,7 +569,6 @@ func UpdatePurchaseTransaction(c *fiber.Ctx) error {
 		}
 	}
 
-	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to commit transaction",
@@ -576,14 +576,15 @@ func UpdatePurchaseTransaction(c *fiber.Ctx) error {
 	}
 
 	// Fetch the updated transaction with all relations
+	var updatedTransaction models.PurchaseTransaction
 	config.DB.
 		Preload("Supplier").
 		Preload("Items").
 		Preload("Items.Book").
 		Preload("Items.Book.MerkBuku").
-		Where("id = ?", id).First(&transaction)
+		Where("id = ?", id).First(&updatedTransaction)
 
-	return c.JSON(transaction)
+	return c.JSON(updatedTransaction)
 }
 
 // DeletePurchaseTransaction godoc

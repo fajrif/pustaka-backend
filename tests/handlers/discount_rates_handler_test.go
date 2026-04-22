@@ -124,8 +124,8 @@ func TestCreateDiscountRate(t *testing.T) {
 		endDate := time.Date(2024, 3, 31, 0, 0, 0, 0, time.UTC)
 
 		overlappingRows := sqlmock.NewRows([]string{"count"}).AddRow(0)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "discount_rates" WHERE (year = $1 AND start_date IS NOT NULL AND end_date IS NOT NULL) AND (start_date, end_date) OVERLAPS ($2, $3)`)).
-			WithArgs("2024", startDate, endDate).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "discount_rates" WHERE (start_date IS NOT NULL AND end_date IS NOT NULL) AND (start_date, end_date) OVERLAPS ($1, $2)`)).
+			WithArgs(startDate, endDate).
 			WillReturnRows(overlappingRows)
 
 		mock.ExpectBegin()
@@ -264,8 +264,8 @@ func TestCreateDiscountRate(t *testing.T) {
 		endDate := time.Date(2024, 3, 31, 0, 0, 0, 0, time.UTC)
 
 		overlappingRows := sqlmock.NewRows([]string{"count"}).AddRow(0)
-		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "discount_rates" WHERE (year = $1 AND start_date IS NOT NULL AND end_date IS NOT NULL) AND (start_date, end_date) OVERLAPS ($2, $3)`)).
-			WithArgs("2024", startDate, endDate).
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "discount_rates" WHERE (start_date IS NOT NULL AND end_date IS NOT NULL) AND (start_date, end_date) OVERLAPS ($1, $2)`)).
+			WithArgs(startDate, endDate).
 			WillReturnRows(overlappingRows)
 
 		mock.ExpectBegin()
